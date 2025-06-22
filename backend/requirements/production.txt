@@ -1,0 +1,10 @@
+-r base.txt
+
+# Production server
+gunicorn==21.2.0
+
+# Health checks
+django-health-check==3.17.0
+
+# Monitoring and performance
+sentry-sdk[django]==1.38.0 
