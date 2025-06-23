@@ -363,12 +363,19 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         # Формируем текст файла
         shopping_list = ["Список покупок\n\n"]
-        for ingredient in ingredients:
+        
+        if not ingredients.exists():
             shopping_list.append(
-                f"• {ingredient['ingredient__name']} "
-                f"({ingredient['ingredient__measurement_unit']}) - "
-                f"{ingredient['total_amount']}\n"
+                "Ваша корзина пуста.\n"
+                "Добавьте рецепты в корзину, чтобы создать список покупок.\n"
             )
+        else:
+            for ingredient in ingredients:
+                shopping_list.append(
+                    f"• {ingredient['ingredient__name']} "
+                    f"({ingredient['ingredient__measurement_unit']}) - "
+                    f"{ingredient['total_amount']}\n"
+                )
 
         # Создаем HTTP response с правильными заголовками
         shopping_content = "".join(shopping_list)

@@ -1,24 +1,33 @@
-name: Setup Test Data
+name: Load Data to Production
 
 on:
   workflow_dispatch:
     inputs:
       confirm:
-        description: 'Type "yes" to confirm test data loading'
+        description: 'Type "yes" to confirm production data loading'
         required: true
         default: 'no'
+      load_type:
+        description: 'Type of data to load'
+        required: true
+        default: 'basic'
+        type: choice
+        options:
+        - basic
+        - demo
+        - full
 
 env:
   PROD_HOST: 89.169.174.76
 
 jobs:
-  setup-test-data:
-    name: Load test data to production
+  load-production-data:
+    name: Load data to production
     runs-on: ubuntu-latest
     if: github.event.inputs.confirm == 'yes'
     
     steps:
-    - name: Setup test data on production server
+    - name: Load production data
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.PROD_HOST }}
@@ -26,25 +35,35 @@ jobs:
         key: ${{ secrets.PROD_SSH_KEY }}
         script: |
           set -e
-          echo "=== ЗАГРУЗКА ТЕСТОВЫХ ДАННЫХ ==="
+          echo "=== ЗАГРУЗКА ДАННЫХ В ПРОДАКШН ==="
           
           cd $HOME/foodgram
           
           echo "Проверяем состояние контейнеров..."
           sudo docker compose -f infra/docker-compose.yml ps
           
-          echo "Загружаем базовые данные (админ, пользователи, теги, ингредиенты)..."
-          sudo docker compose -f infra/docker-compose.yml exec -T backend python manage.py setup_foodgram
+          if [ "${{ github.event.inputs.load_type }}" = "basic" ] || [ "${{ github.event.inputs.load_type }}" = "full" ]; then
+            echo "🔧 Загружаем базовые данные (администратор и теги)..."
+            sudo docker compose -f infra/docker-compose.yml exec -T backend python manage.py setup_production
+            
+            echo "🥕 Загрузка ингредиентов из CSV..."
+            sudo docker compose -f infra/docker-compose.yml exec -T backend python manage.py load_ingredients --file data/ingredients.csv
+          fi
           
-          echo "Загружаем демо-данные (рецепты, изображения, взаимодействия)..."
-          sudo docker compose -f infra/docker-compose.yml exec -T backend python manage.py load_demo_data
+          if [ "${{ github.event.inputs.load_type }}" = "demo" ] || [ "${{ github.event.inputs.load_type }}" = "full" ]; then
+            echo "🍽️ Загружаем демо-данные (рецепты)..."
+            if sudo docker compose -f infra/docker-compose.yml exec -T backend python manage.py load_demo_data 2>/dev/null; then
+              echo "✅ Демо-данные загружены"
+            else
+              echo "⚠️ Команда load_demo_data не найдена, пропускаем"
+            fi
+          fi
           
-          echo "✅ ТЕСТОВЫЕ ДАННЫЕ ЗАГРУЖЕНЫ!"
+          echo ""
+          echo "✅ ЗАГРУЗКА ДАННЫХ ЗАВЕРШЕНА!"
           echo ""
           echo "📋 АККАУНТЫ ДЛЯ ВХОДА:"
-          echo "👤 Администратор: admin@foodgram.ru / admin123"
-          echo "👤 Шеф-повар: chef@foodgram.ru / testpass123"  
-          echo "👤 Мария: maria@foodgram.ru / testpass123"
-          echo "👤 Тестовый: test@foodgram.ru / testpass123"
+          echo "👤 Администратор: admin@foodgram.local / admin123"
           echo ""
-          echo "🌐 Admin панель: https://foodgram.freedynamicdns.net/admin/" 
+          echo "🌐 Admin панель: https://foodgram.freedynamicdns.net/admin/"
+          echo "🌐 Сайт: https://foodgram.freedynamicdns.net/" 

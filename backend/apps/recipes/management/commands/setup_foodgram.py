@@ -48,8 +48,13 @@ class Command(BaseCommand):
         """Создание администратора."""
         self.stdout.write("👤 Создание администратора...")
 
+        # Проверяем, есть ли уже администратор с нужным email
+        if User.objects.filter(email="admin@foodgram.local").exists():
+            self.stdout.write("ℹ️ Администратор уже существует")
+            return
+
         admin, created = User.objects.get_or_create(
-            email="admin@foodgram.ru",
+            email="admin@foodgram.local",
             defaults={
                 "username": "admin",
                 "first_name": "Администратор",
@@ -64,22 +69,32 @@ class Command(BaseCommand):
             admin.save()
             self.stdout.write("✅ Администратор создан")
         else:
-            self.stdout.write("ℹ️ Администратор уже существует")
+            # Обновляем существующего пользователя
+            admin.is_staff = True
+            admin.is_superuser = True
+            admin.set_password("admin123")
+            admin.save()
+            self.stdout.write("✅ Администратор обновлен")
 
     def create_tags(self):
         """Создание тегов."""
         self.stdout.write("🏷️ Создание тегов...")
 
         tags_data = [
-            {"name": "Завтрак", "color": "#E26C2D", "slug": "breakfast"},
-            {"name": "Обед", "color": "#49B64E", "slug": "lunch"},
-            {"name": "Ужин", "color": "#8775D2", "slug": "dinner"},
-            {"name": "Десерт", "color": "#F44336", "slug": "dessert"},
+            {"name": "Завтрак", "color": "#E26C2D", "slug": "zavtrak"},
+            {"name": "Обед", "color": "#49B64E", "slug": "obed"},
+            {"name": "Ужин", "color": "#8775D2", "slug": "uzhin"},
+            {"name": "Десерт", "color": "#F46EBD", "slug": "desert"},
         ]
 
         for tag_data in tags_data:
-            Tag.objects.get_or_create(slug=tag_data["slug"], defaults=tag_data)
-            self.stdout.write(f"✅ {tag_data['name']}")
+            tag, created = Tag.objects.get_or_create(
+                slug=tag_data["slug"], defaults=tag_data
+            )
+            if created:
+                self.stdout.write(f"✅ Создан тег: {tag_data['name']}")
+            else:
+                self.stdout.write(f"ℹ️ Тег уже существует: {tag_data['name']}")
 
     def create_users(self):
         """Создание пользователей."""
@@ -110,13 +125,13 @@ class Command(BaseCommand):
                 self.stdout.write(f"✅ {user.username}")
 
     def create_ingredients(self):
-        """Создание ингредиентов из JSON файла."""
+        """Загрузка ингредиентов из CSV файла."""
         self.stdout.write(
-            "🥕 Загрузка ингредиентов из data/ingredients.json..."
+            "🥕 Загрузка ингредиентов из data/ingredients.csv..."
         )
 
         try:
-            import json
+            import csv
             import os
 
             from django.conf import settings
@@ -124,39 +139,49 @@ class Command(BaseCommand):
             # Путь к файлу с ингредиентами
             base_dir = getattr(settings, "BASE_DIR", "").parent
             ingredients_file = os.path.join(
-                base_dir, "data", "ingredients.json"
+                base_dir, "data", "ingredients.csv"
             )
 
             if not os.path.exists(ingredients_file):
                 self.stdout.write(
-                    "⚠️ Файл ingredients.json не найден, "
+                    "⚠️ Файл ingredients.csv не найден, "
                     "создаем базовые ингредиенты"
                 )
                 self._create_basic_ingredients()
                 return
 
-            with open(ingredients_file, "r", encoding="utf-8") as f:
-                ingredients_data = json.load(f)
-
             created_count = 0
-            for ingredient_data in ingredients_data:
-                name = ingredient_data.get("name", "").strip()
-                unit = ingredient_data.get("measurement_unit", "").strip()
+            total_count = 0
+            
+            with open(ingredients_file, "r", encoding="utf-8") as csvfile:
+                reader = csv.reader(csvfile)
+                for row in reader:
+                    if len(row) < 2:
+                        continue
+                        
+                    name = row[0].strip()
+                    unit = row[1].strip()
+                    total_count += 1
 
-                if not name or not unit:
-                    continue
+                    if not name or not unit:
+                        continue
 
-                ingredient, created = Ingredient.objects.get_or_create(
-                    name=name, measurement_unit=unit
-                )
-                if created:
-                    created_count += 1
+                    ingredient, created = Ingredient.objects.get_or_create(
+                        name=name,
+                        measurement_unit=unit
+                    )
+                    if created:
+                        created_count += 1
+                        
+                    # Показываем прогресс каждые 100 ингредиентов
+                    if total_count % 100 == 0:
+                        self.stdout.write(f"Обработано {total_count} записей...")
 
             self.stdout.write(
                 f"✅ Загружено {created_count} новых ингредиентов"
             )
             self.stdout.write(
-                f"📊 Всего ингредиентов: {Ingredient.objects.count()}"
+                f"📊 Всего ингредиентов в базе: {Ingredient.objects.count()}"
             )
 
         except Exception as e:
