@@ -50,33 +50,31 @@ jobs:
         host: ${{ env.PROD_HOST }}
         username: ${{ secrets.PROD_USER }}
         password: ${{ secrets.PROD_PASSWORD }}
+        debug: true
         script: |
           set -e
           
-          echo "Переход в рабочую директорию..."
-          cd /home/foodgram/app || {
-            echo "Создание рабочей директории..."
-            mkdir -p /home/foodgram/app
-            cd /home/foodgram/app
-          }
+          echo "=== НАЧАЛО ДЕПЛОЯ ==="
+          echo "Пользователь: $(whoami)"
+          echo "Домашняя директория: $HOME"
+          echo "Текущая директория: $(pwd)"
           
-          echo "Проверка SSL сертификатов..."
-          if [ ! -f "/etc/letsencrypt/live/${{ env.DOMAIN }}/fullchain.pem" ]; then
-            echo "⚠️  SSL сертификаты не найдены. Запустите скрипт setup_ssl_certbot.sh"
-            echo "Для первого деплоя выполните:"
-            echo "bash scripts/deploy/setup_ssl_certbot.sh"
-            exit 1
-          fi
+          echo "Переход в рабочую директорию..."
+          mkdir -p $HOME/foodgram
+          cd $HOME/foodgram
           
           echo "Обновление кода..."
           if [ -d ".git" ]; then
+            echo "Обновляем существующий репозиторий..."
             git fetch origin
             git reset --hard origin/main
           else
+            echo "Клонируем репозиторий..."
             git clone https://github.com/${{ github.repository }}.git .
           fi
           
           echo "Создание .env файла..."
+          mkdir -p infra
           cat > infra/.env << EOF
           # Django settings
           DEBUG=False
@@ -94,7 +92,6 @@ jobs:
           # Redis
           REDIS_HOST=redis
           REDIS_PORT=6379
-          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
           
           # MinIO
           MINIO_ACCESS_KEY=${{ secrets.MINIO_ACCESS_KEY }}
@@ -107,58 +104,25 @@ jobs:
           EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
           DEFAULT_FROM_EMAIL=noreply@${{ env.DOMAIN }}
           
-          # Security для HTTPS
-          SECURE_SSL_REDIRECT=True
-          SESSION_COOKIE_SECURE=True
-          CSRF_COOKIE_SECURE=True
-          
           # Domain
           DOMAIN_NAME=${{ env.DOMAIN }}
           EOF
           
+          echo "Проверка Docker..."
+          docker --version || echo "Docker не установлен"
+          docker-compose --version || echo "Docker Compose не установлен"
+          
           echo "Остановка старых контейнеров..."
-          docker-compose -f infra/docker-compose.yml down --remove-orphans || true
+          docker-compose -f infra/docker-compose.yml down --remove-orphans || echo "Нет запущенных контейнеров"
           
-          echo "Очистка старых образов..."
-          docker system prune -f || true
-          
-          echo "Сборка и запуск новых контейнеров..."
+          echo "Сборка и запуск контейнеров..."
           docker-compose -f infra/docker-compose.yml up -d --build
           
           echo "Ожидание запуска сервисов..."
-          sleep 60
+          sleep 30
           
-          echo "Проверка состояния сервисов..."
+          echo "Проверка состояния контейнеров..."
           docker-compose -f infra/docker-compose.yml ps
           
-          echo "Создание администратора..."
-          docker-compose -f infra/docker-compose.yml exec -T backend python manage.py shell -c "
-          from django.contrib.auth import get_user_model
-          User = get_user_model()
-          if not User.objects.filter(email='admin@${{ env.DOMAIN }}').exists():
-              User.objects.create_superuser(
-                  email='admin@${{ env.DOMAIN }}',
-                  password='${{ secrets.ADMIN_PASSWORD }}',
-                  username='admin',
-                  first_name='Admin',
-                  last_name='User'
-              )
-              print('Superuser created')
-          else:
-              print('Superuser already exists')
-          " || true
-          
-          echo "Загрузка ингредиентов..."
-          docker-compose -f infra/docker-compose.yml exec -T backend python manage.py load_ingredients || true
-          
-          echo "Создание тестовых данных..."
-          docker-compose -f infra/docker-compose.yml exec -T backend python manage.py create_test_data || true
-          
-          echo "Проверка работоспособности..."
-          sleep 10
-          curl -f http://localhost/api/ || echo "API будет доступен через несколько минут"
-          
-          echo "🎉 Деплой завершен успешно!"
-          echo "🌐 Сайт: https://${{ env.DOMAIN }}"
-          echo "🔧 Админка: https://${{ env.DOMAIN }}/admin/"
-          echo "📡 API: https://${{ env.DOMAIN }}/api/" 
+          echo "🎉 Деплой завершен!"
+          echo "🌐 Сайт должен быть доступен на: http://${{ env.PROD_HOST }}" 
