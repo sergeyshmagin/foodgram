@@ -1,0 +1,58 @@
+name: Setup Test Data
+
+on:
+  workflow_dispatch:
+
+env:
+  PROD_HOST: 89.169.174.76
+
+jobs:
+  setup-test-data:
+    name: Load test data to production
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Setup test data on production server
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ env.PROD_HOST }}
+        username: ${{ secrets.PROD_USER }}
+        key: ${{ secrets.PROD_SSH_KEY }}
+        debug: true
+        script: |
+          set -e
+          
+          echo "🚀 ЗАГРУЗКА ТЕСТОВЫХ ДАННЫХ FOODGRAM"
+          
+          # Переходим в рабочую директорию
+          cd ~/foodgram
+          
+          echo "📦 Загрузка ингредиентов..."
+          sudo docker compose -f infra/docker-compose.yml exec -T backend python manage.py load_ingredients || echo "Ингредиенты уже загружены"
+          
+          echo "👤 Создание администратора и тестовых данных..."
+          sudo docker compose -f infra/docker-compose.yml exec -T backend python manage.py setup_foodgram
+          
+          echo "🏗️ Настройка MinIO..."
+          sudo docker compose -f infra/docker-compose.yml exec -T backend python manage.py setup_minio || echo "MinIO уже настроен"
+          
+          echo "📊 Проверка статуса..."
+          sudo docker compose -f infra/docker-compose.yml exec -T backend python manage.py shell -c "
+          from django.contrib.auth import get_user_model
+          from apps.recipes.models import Recipe, Tag, Ingredient
+          User = get_user_model()
+          print(f'👤 Пользователи: {User.objects.count()}')
+          print(f'🍳 Рецепты: {Recipe.objects.count()}')
+          print(f'🏷️ Теги: {Tag.objects.count()}')
+          print(f'🥕 Ингредиенты: {Ingredient.objects.count()}')
+          "
+          
+          echo ""
+          echo "✅ ТЕСТОВЫЕ ДАННЫЕ ЗАГРУЖЕНЫ!"
+          echo ""
+          echo "🔑 УЧЕТНЫЕ ДАННЫЕ:"
+          echo "👨‍💻 Администратор: admin@foodgram.ru / admin123"
+          echo "👤 Тестовый пользователь: test@foodgram.ru / testpass123"
+          echo ""
+          echo "🌐 Сайт: https://foodgram.freedynamicdns.net"
+          echo "🔧 Админка: https://foodgram.freedynamicdns.net/admin/" 
