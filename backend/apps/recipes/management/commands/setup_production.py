@@ -71,4 +71,4 @@ class Command(BaseCommand):
             if created:
                 self.stdout.write(f"✅ Создан тег: {tag_data['name']}")
             else:
-                self.stdout.write(f"ℹ️ Тег уже существует: {tag_data['name']}") 
+                self.stdout.write(f"ℹ️ Тег уже существует: {tag_data['name']}")
