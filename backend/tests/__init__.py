@@ -1,1 +1,1 @@
-"""Tests package for Foodgram project.""" 
+"""Tests package for Foodgram project."""

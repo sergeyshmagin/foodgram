@@ -1,1 +1,1 @@
-"""Django applications package for Foodgram project.""" 
+"""Django applications package for Foodgram project."""

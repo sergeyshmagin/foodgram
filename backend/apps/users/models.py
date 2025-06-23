@@ -13,58 +13,59 @@ from foodgram.constants import (
 
 class User(AbstractUser):
     """Кастомная модель пользователя."""
-    
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
-    
+
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = ["username", "first_name", "last_name"]
+
     email = models.EmailField(
-        'Email',
+        "Email",
         max_length=MAX_EMAIL_LENGTH,
         unique=True,
-        help_text='Обязательное поле. Максимум 254 символа.'
+        help_text="Обязательное поле. Максимум 254 символа.",
     )
     username = models.CharField(
-        'Имя пользователя',
+        "Имя пользователя",
         max_length=MAX_USERNAME_LENGTH,
         unique=True,
         validators=[
             RegexValidator(
-                regex=r'^[\w.@+-]+$',
+                regex=r"^[\w.@+-]+$",
                 message=(
-                    'Имя пользователя может содержать только '
-                    'буквы, цифры и символы @/./+/-/_'
-                )
+                    "Имя пользователя может содержать только "
+                    "буквы, цифры и символы @/./+/-/_"
+                ),
             )
         ],
         help_text=(
-            'Обязательное поле. Максимум 150 символов. '
-            'Только буквы, цифры и @/./+/-/_'
-        )
+            "Обязательное поле. Максимум 150 символов. "
+            "Только буквы, цифры и @/./+/-/_"
+        ),
     )
     first_name = models.CharField(
-        'Имя',
+        "Имя",
         max_length=MAX_FIRST_NAME_LENGTH,
-        help_text='Обязательное поле. Максимум 150 символов.'
+        help_text="Обязательное поле. Максимум 150 символов.",
     )
     last_name = models.CharField(
-        'Фамилия',
+        "Фамилия",
         max_length=MAX_LAST_NAME_LENGTH,
-        help_text='Обязательное поле. Максимум 150 символов.'
+        help_text="Обязательное поле. Максимум 150 символов.",
     )
     avatar = models.ImageField(
-        'Аватар',
-        upload_to='avatars/',
+        "Аватар",
+        upload_to="avatars/",
         blank=True,
         null=True,
-        help_text='Загрузите аватар пользователя'
+        help_text="Загрузите аватар пользователя",
     )
-    
+
     class Meta:
         """Метаданные модели User."""
-        verbose_name = 'Пользователь'
-        verbose_name_plural = 'Пользователи'
-        ordering = ['username']
-    
+
+        verbose_name = "Пользователь"
+        verbose_name_plural = "Пользователи"
+        ordering = ["username"]
+
     def __str__(self):
         """Строковое представление пользователя."""
         return self.username

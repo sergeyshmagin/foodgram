@@ -29,7 +29,7 @@ USERS_PAGE_SIZE = 6
 
 # File upload
 MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB in bytes
-ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif']
+ALLOWED_IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif"]
 
 # Cart and favorites
 CART_LIMIT = 100
@@ -39,4 +39,4 @@ FAVORITES_LIMIT = 100
 SUBSCRIPTIONS_LIMIT = 100
 
 # Admin
-ADMIN_LIST_PER_PAGE = 25 
+ADMIN_LIST_PER_PAGE = 25
