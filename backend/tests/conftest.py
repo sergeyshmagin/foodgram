@@ -1,25 +1,16 @@
-"""Global pytest configuration and fixtures."""
-import os
-import django
-from django.conf import settings
-
-if not settings.configured:
-    os.environ.setdefault(
-        "DJANGO_SETTINGS_MODULE", "foodgram.settings.development"
-    )
-    django.setup()
+"""Конфигурация тестов для Foodgram."""
+import base64
 
 import pytest
 from django.contrib.auth import get_user_model
-from rest_framework.test import APIClient
-from rest_framework.authtoken.models import Token
 from django.core.files.uploadedfile import SimpleUploadedFile
+from rest_framework.authtoken.models import Token
+from rest_framework.test import APIClient
 
-from apps.recipes.models import Tag, Ingredient, Recipe
+from apps.recipes.models import Ingredient, Recipe, Tag
 
 User = get_user_model()
 
-# Короткое base64 изображение для тестов
 short_base64 = (
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ"
     "AAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
@@ -34,7 +25,7 @@ def enable_db_access(db):
 
 @pytest.fixture
 def api_client():
-    """Клиент для API тестирования."""
+    """API клиент для тестов."""
     return APIClient()
 
 
@@ -75,14 +66,6 @@ def admin_user():
 
 
 @pytest.fixture
-def authenticated_client(api_client, user):
-    """Аутентифицированный клиент."""
-    token, _ = Token.objects.get_or_create(user=user)
-    api_client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
-    return api_client
-
-
-@pytest.fixture
 def tag():
     """Создает тестовый тег."""
     return Tag.objects.create(
@@ -93,29 +76,15 @@ def tag():
 @pytest.fixture
 def ingredient():
     """Создает тестовый ингредиент."""
-    return Ingredient.objects.create(name="Молоко", measurement_unit="мл")
-
-
-@pytest.fixture
-def recipe_data(tag, ingredient):
-    """Данные для создания рецепта."""
-    return {
-        "name": "Новый рецепт",
-        "text": "Описание нового рецепта",
-        "cooking_time": 45,
-        "image": short_base64,
-        "tags": [tag.id],
-        "ingredients": [{"id": ingredient.id, "amount": 100}],
-    }
+    return Ingredient.objects.create(name="Мука", measurement_unit="г")
 
 
 @pytest.fixture
 def recipe(user, tag, ingredient):
     """Создает тестовый рецепт."""
-    # Создаем тестовое изображение
     image = SimpleUploadedFile(
         name="test_image.jpg",
-        content=b"fake_image_content",
+        content=base64.b64decode(short_base64.split(",")[1]),
         content_type="image/jpeg",
     )
 
@@ -127,44 +96,41 @@ def recipe(user, tag, ingredient):
         cooking_time=30,
     )
     recipe.tags.add(tag)
+
+    from apps.recipes.models import IngredientInRecipe
+
+    IngredientInRecipe.objects.create(
+        recipe=recipe, ingredient=ingredient, amount=100
+    )
+
     return recipe
 
 
-# URL фикстуры
 @pytest.fixture
-def users_url():
-    """URL для списка пользователей."""
-    return "/api/v1/users/"
-
-
-@pytest.fixture
-def tags_url():
-    """URL для списка тегов."""
-    return "/api/v1/tags/"
+def user_token(user):
+    """Создает токен для пользователя."""
+    token, created = Token.objects.get_or_create(user=user)
+    return token
 
 
 @pytest.fixture
-def ingredients_url():
-    """URL для списка ингредиентов."""
-    return "/api/v1/ingredients/"
+def authenticated_client(api_client, user_token):
+    """Аутентифицированный API клиент."""
+    api_client.credentials(HTTP_AUTHORIZATION=f"Token {user_token.key}")
+    return api_client
 
 
 @pytest.fixture
-def recipes_url():
-    """URL для списка рецептов."""
-    return "/api/v1/recipes/"
-
-
-@pytest.fixture
-def recipe_detail_url(recipe):
-    """URL для детальной информации о рецепте."""
-    return f"/api/v1/recipes/{recipe.pk}/"
-
-
-@pytest.fixture
-def health_check_url():
-    """URL для health check."""
-    return "/api/v1/health/"
+def recipe_data(tag, ingredient):
+    """Данные для создания рецепта."""
+    return {
+        "name": "Новый рецепт",
+        "text": "Описание нового рецепта",
+        "cooking_time": 45,
+        "image": short_base64,
+        "tags": [tag.id],
+        "ingredients": [{"id": ingredient.id, "amount": 200}],
+    }
 
 
 @pytest.fixture
@@ -190,3 +156,39 @@ def staff_user():
         password="staffpass123",
         is_staff=True,
     )
+
+
+@pytest.fixture
+def users_url():
+    """URL для API пользователей."""
+    return "/api/v1/users/"
+
+
+@pytest.fixture
+def tags_url():
+    """URL для API тегов."""
+    return "/api/v1/tags/"
+
+
+@pytest.fixture
+def ingredients_url():
+    """URL для API ингредиентов."""
+    return "/api/v1/ingredients/"
+
+
+@pytest.fixture
+def recipes_url():
+    """URL для API рецептов."""
+    return "/api/v1/recipes/"
+
+
+@pytest.fixture
+def recipe_detail_url(recipe):
+    """URL для детального просмотра рецепта."""
+    return f"/api/v1/recipes/{recipe.id}/"
+
+
+@pytest.fixture
+def health_check_url():
+    """URL для проверки здоровья API."""
+    return "/api/v1/health/"

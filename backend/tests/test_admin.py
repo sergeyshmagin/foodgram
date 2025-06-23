@@ -5,8 +5,8 @@ from django.contrib.admin.sites import AdminSite
 from django.contrib.auth import get_user_model
 from django.test import RequestFactory
 
-from apps.recipes.admin import RecipeAdmin, TagAdmin, IngredientAdmin
-from apps.recipes.models import Recipe, Tag, Ingredient
+from apps.recipes.admin import IngredientAdmin, RecipeAdmin, TagAdmin
+from apps.recipes.models import Ingredient, Recipe, Tag
 from apps.users.admin import CustomUserAdmin
 
 User = get_user_model()
@@ -215,7 +215,7 @@ class TestAdminPermissions:
         assert self.admin.has_module_permission(request)
 
     def test_admin_no_access_for_regular_user(self, user):
-        """Тест отсутствия доступа обычного пользователя к админке."""
+        """Тест отсутствия доступа у обычного пользователя."""
         request = self.factory.get("/admin/")
         request.user = user
 
@@ -224,7 +224,7 @@ class TestAdminPermissions:
 
 @pytest.mark.django_db
 class TestAdminInlines:
-    """Тесты inline админки."""
+    """Тесты инлайнов в админке."""
 
     def setup_method(self):
         """Настройка для каждого теста."""
@@ -232,7 +232,7 @@ class TestAdminInlines:
         self.admin = RecipeAdmin(Recipe, self.site)
 
     def test_recipe_has_ingredient_inline(self):
-        """Тест наличия inline для ингредиентов рецепта."""
-        # Проверяем что есть inline для RecipeIngredient
-        assert hasattr(self.admin, "inlines")
-        assert len(self.admin.inlines) > 0
+        """Тест наличия инлайна ингредиентов в админке рецептов."""
+        from apps.recipes.admin import IngredientInRecipeInline
+
+        assert IngredientInRecipeInline in self.admin.inlines

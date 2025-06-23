@@ -3,15 +3,8 @@ from django.contrib import admin
 from django.db.models import Count
 from django.utils.safestring import mark_safe
 
-from .models import (
-    Favorite,
-    Ingredient,
-    IngredientInRecipe,
-    Recipe,
-    ShoppingCart,
-    Subscription,
-    Tag,
-)
+from .models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
+                     ShoppingCart, Subscription, Tag)
 
 
 class IngredientInRecipeInline(admin.TabularInline):
