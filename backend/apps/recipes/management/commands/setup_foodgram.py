@@ -117,15 +117,57 @@ class Command(BaseCommand):
                 self.stdout.write(f"✅ {user.username}")
 
     def create_ingredients(self):
-        """Создание ингредиентов."""
-        self.stdout.write("🥕 Создание ингредиентов...")
+        """Создание ингредиентов из JSON файла."""
+        self.stdout.write("🥕 Загрузка ингредиентов из data/ingredients.json...")
 
-        ingredients = [
+        try:
+            import json
+            import os
+            from django.conf import settings
+
+            # Путь к файлу с ингредиентами
+            base_dir = getattr(settings, 'BASE_DIR', '').parent
+            ingredients_file = os.path.join(base_dir, 'data', 'ingredients.json')
+
+            if not os.path.exists(ingredients_file):
+                self.stdout.write("⚠️ Файл ingredients.json не найден, создаем базовые ингредиенты")
+                self._create_basic_ingredients()
+                return
+
+            with open(ingredients_file, 'r', encoding='utf-8') as f:
+                ingredients_data = json.load(f)
+
+            created_count = 0
+            for ingredient_data in ingredients_data:
+                name = ingredient_data.get('name', '').strip()
+                unit = ingredient_data.get('measurement_unit', '').strip()
+
+                if not name or not unit:
+                    continue
+
+                ingredient, created = Ingredient.objects.get_or_create(
+                    name=name,
+                    measurement_unit=unit
+                )
+                if created:
+                    created_count += 1
+
+            self.stdout.write(f"✅ Загружено {created_count} новых ингредиентов")
+            self.stdout.write(f"📊 Всего ингредиентов: {Ingredient.objects.count()}")
+
+        except Exception as e:
+            self.stdout.write(f"❌ Ошибка загрузки ингредиентов: {e}")
+            self.stdout.write("⚠️ Создаем базовые ингредиенты")
+            self._create_basic_ingredients()
+
+    def _create_basic_ingredients(self):
+        """Создание базовых ингредиентов."""
+        basic_ingredients = [
             ("Мука", "г"), ("Сахар", "г"), ("Яйца", "шт"),
             ("Молоко", "мл"), ("Масло", "г"), ("Соль", "г")
         ]
 
-        for name, unit in ingredients:
+        for name, unit in basic_ingredients:
             Ingredient.objects.get_or_create(
                 name=name, measurement_unit=unit
             )
@@ -133,21 +175,23 @@ class Command(BaseCommand):
     def setup_minio(self):
         """Настройка MinIO bucket."""
         self.stdout.write("🗂️ Настройка MinIO...")
-        
+
         try:
             import boto3
             from botocore.exceptions import ClientError
-            
+
             # Получаем настройки из settings
             minio_config = getattr(settings, 'AWS_S3_ENDPOINT_URL', None)
             access_key = getattr(settings, 'AWS_ACCESS_KEY_ID', None)
             secret_key = getattr(settings, 'AWS_SECRET_ACCESS_KEY', None)
-            bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', 'foodgram-static')
-            
+            bucket_name = getattr(
+                settings, 'AWS_STORAGE_BUCKET_NAME', 'foodgram-static'
+            )
+
             if not all([minio_config, access_key, secret_key]):
                 self.stdout.write("⚠️ MinIO настройки не найдены, пропускаем")
                 return
-            
+
             # Создаем клиент S3 для MinIO
             s3_client = boto3.client(
                 's3',
@@ -156,7 +200,7 @@ class Command(BaseCommand):
                 aws_secret_access_key=secret_key,
                 region_name='us-east-1'
             )
-            
+
             # Проверяем существует ли bucket
             try:
                 s3_client.head_bucket(Bucket=bucket_name)
@@ -169,12 +213,16 @@ class Command(BaseCommand):
                         s3_client.create_bucket(Bucket=bucket_name)
                         self.stdout.write(f"✅ Bucket {bucket_name} создан")
                     except ClientError as create_error:
-                        self.stdout.write(f"❌ Ошибка создания bucket: {create_error}")
+                        self.stdout.write(
+                            f"❌ Ошибка создания bucket: {create_error}"
+                        )
                 else:
                     self.stdout.write(f"❌ Ошибка проверки bucket: {e}")
-                    
+
         except ImportError:
-            self.stdout.write("⚠️ boto3 не установлен, пропускаем настройку MinIO")
+            self.stdout.write(
+                "⚠️ boto3 не установлен, пропускаем настройку MinIO"
+            )
         except Exception as e:
             self.stdout.write(f"⚠️ Ошибка настройки MinIO: {e}")
 

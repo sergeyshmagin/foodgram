@@ -139,31 +139,35 @@ class Command(BaseCommand):
                 self.stdout.write(f"✅ {user.username}")
 
     def create_ingredients(self):
-        """Создает базовые ингредиенты."""
-        self.stdout.write("🥕 Создание ингредиентов...")
+        """Проверяет наличие базовых ингредиентов для рецептов."""
+        self.stdout.write("🥕 Проверка ингредиентов для рецептов...")
 
-        ingredients_data = [
-            ("Мука пшеничная", "г"),
-            ("Сахар", "г"),
-            ("Яйца куриные", "шт"),
-            ("Молоко", "мл"),
-            ("Масло сливочное", "г"),
-            ("Соль", "г"),
-            ("Помидоры", "шт"),
-            ("Лук репчатый", "шт"),
-            ("Морковь", "шт"),
-            ("Картофель", "шт"),
-            ("Говядина", "г"),
-            ("Курица", "г"),
+        # Основные ингредиенты для демо-рецептов
+        required_ingredients = [
+            ("мука пшеничная", "г"),
+            ("сахар", "г"),
+            ("яйца куриные", "шт"),
+            ("молоко", "мл"),
+            ("масло сливочное", "г"),
+            ("соль", "г"),
+            ("помидоры", "шт"),
+            ("лук репчатый", "шт"),
+            ("морковь", "шт"),
+            ("картофель", "шт"),
+            ("говядина", "г"),
+            ("курица", "г"),
         ]
 
-        for name, unit in ingredients_data:
+        for name, unit in required_ingredients:
             ingredient, created = Ingredient.objects.get_or_create(
                 name=name,
                 measurement_unit=unit
             )
             status = "✅" if created else "ℹ️"
             self.stdout.write(f"{status} {name}")
+
+        total_count = Ingredient.objects.count()
+        self.stdout.write(f"📊 Всего ингредиентов в базе: {total_count}")
 
     def create_recipes(self):
         """Создает тестовые рецепты."""
@@ -243,16 +247,31 @@ class Command(BaseCommand):
                 # Добавляем ингредиенты
                 for ingredient_name, amount in recipe_data["ingredients"]:
                     try:
-                        ingredient = Ingredient.objects.get(
-                            name=ingredient_name
+                        # Ищем ингредиент по точному имени или похожему
+                        ingredient = Ingredient.objects.filter(
+                            name__iexact=ingredient_name
+                        ).first()
+
+                        if not ingredient:
+                            # Если не нашли, ищем по частичному совпадению
+                            ingredient = Ingredient.objects.filter(
+                                name__icontains=ingredient_name.lower()
+                            ).first()
+
+                        if ingredient:
+                            IngredientInRecipe.objects.create(
+                                recipe=recipe,
+                                ingredient=ingredient,
+                                amount=amount
+                            )
+                        else:
+                            self.stdout.write(
+                                f"⚠️ Ингредиент '{ingredient_name}' не найден"
+                            )
+                    except Exception as e:
+                        self.stdout.write(
+                            f"❌ Ошибка добавления ингредиента: {e}"
                         )
-                        IngredientInRecipe.objects.create(
-                            recipe=recipe,
-                            ingredient=ingredient,
-                            amount=amount
-                        )
-                    except Ingredient.DoesNotExist:
-                        pass
 
                 self.stdout.write(f"✅ {recipe.name}")
 
@@ -275,7 +294,9 @@ class Command(BaseCommand):
             filename = f"recipe_{safe_name}.jpg"
             return ContentFile(img_io.getvalue(), name=filename)
         except Exception as e:
-            self.stdout.write(f"⚠️ Ошибка создания изображения для {recipe_name}: {e}")
+            self.stdout.write(
+                f"⚠️ Ошибка создания изображения для {recipe_name}: {e}"
+            )
             return None
 
     def create_interactions(self):
