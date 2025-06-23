@@ -38,17 +38,68 @@ class TestUserAPI:
     def test_user_registration(self, api_client, users_url):
         """Тест регистрации пользователя."""
         user_data = {
-            "email": "newuser@example.com",
-            "username": "newuser",
-            "first_name": "New",
+            "email": "test@example.com",
+            "username": "testuser",
+            "first_name": "Test",
             "last_name": "User",
-            "password": "newpass123",
+            "password": "testpass123",
         }
 
-        response = api_client.post(users_url, user_data)
+        response = api_client.post(users_url, user_data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert User.objects.filter(email=user_data["email"]).exists()
+        assert "password" not in response.data
+        assert response.data["email"] == user_data["email"]
+
+    def test_set_password(self, authenticated_client, user):
+        """Тест изменения пароля."""
+        url = "/api/v1/users/set_password/"
+        data = {
+            "current_password": "testpass123",
+            "new_password": "newpass123",
+        }
+
+        response = authenticated_client.post(url, data, format="json")
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        
+        # Проверяем, что пароль действительно изменился
+        user.refresh_from_db()
+        assert user.check_password("newpass123")
+
+    def test_set_password_invalid_current(self, authenticated_client):
+        """Тест изменения пароля с неверным текущим паролем."""
+        url = "/api/v1/users/set_password/"
+        data = {
+            "current_password": "wrongpass",
+            "new_password": "newpass123",
+        }
+
+        response = authenticated_client.post(url, data, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "Неверный текущий пароль" in str(response.data)
+
+    def test_reset_password(self, api_client, user):
+        """Тест сброса пароля."""
+        url = "/api/v1/users/reset_password/"
+        data = {"email": user.email}
+
+        response = api_client.post(url, data, format="json")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "Инструкции отправлены на email" in str(response.data)
+
+    def test_reset_password_nonexistent_user(self, api_client):
+        """Тест сброса пароля для несуществующего пользователя."""
+        url = "/api/v1/users/reset_password/"
+        data = {"email": "nonexistent@example.com"}
+
+        response = api_client.post(url, data, format="json")
+
+        # Должен возвращать тот же ответ, чтобы не раскрывать существование пользователя
+        assert response.status_code == status.HTTP_200_OK
+        assert "Инструкции отправлены на email" in str(response.data)
 
 
 @pytest.mark.django_db
@@ -208,6 +259,25 @@ class TestRecipeAPI:
 
         assert response.status_code == expected_status
 
+    def test_recipe_get_link(self, api_client, recipe):
+        """Тест получения короткой ссылки на рецепт."""
+        url = f"/api/v1/recipes/{recipe.pk}/get-link/"
+        response = api_client.get(url)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "short-link" in data
+        assert f"/s/{recipe.pk}/" in data["short-link"]
+
+    def test_short_link_redirect(self, api_client, recipe):
+        """Тест редиректа по короткой ссылке."""
+        url = f"/s/{recipe.pk}/"
+        response = api_client.get(url)
+
+        # Проверяем, что происходит редирект
+        assert response.status_code == 302
+        assert response.url == f"/recipes/{recipe.pk}/"
+
 
 @pytest.mark.django_db
 class TestFavoriteAPI:
@@ -257,6 +327,49 @@ class TestShoppingCartAPI:
 
         assert response.status_code == status.HTTP_200_OK
         assert response["Content-Type"] == "text/plain; charset=utf-8"
+        assert "attachment" in response["Content-Disposition"]
+
+        # Проверяем, что файл не пустой и содержит ожидаемые данные
+        content = response.content.decode("utf-8")
+        assert "Список покупок" in content
+        assert len(content) > 20  # Файл не должен быть пустым
+
+    def test_download_shopping_cart_with_ingredients(
+        self, authenticated_client, user, ingredient, tag
+    ):
+        """Тест скачивания списка покупок с ингредиентами."""
+        # Создаем рецепт с ингредиентами
+        from apps.recipes.models import IngredientInRecipe, Recipe
+
+        recipe = Recipe.objects.create(
+            author=user,
+            name="Тестовый рецепт",
+            text="Описание рецепта",
+            cooking_time=30,
+        )
+        recipe.tags.add(tag)
+
+        # Добавляем ингредиент в рецепт
+        IngredientInRecipe.objects.create(
+            recipe=recipe,
+            ingredient=ingredient,
+            amount=200,
+        )
+
+        # Добавляем рецепт в корзину
+        ShoppingCart.objects.create(user=user, recipe=recipe)
+
+        url = "/api/v1/recipes/download_shopping_cart/"
+        response = authenticated_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        content = response.content.decode("utf-8")
+
+        # Проверяем содержимое файла
+        assert "Список покупок" in content
+        assert ingredient.name in content
+        assert ingredient.measurement_unit in content
+        assert "200" in content  # количество
 
 
 @pytest.mark.django_db

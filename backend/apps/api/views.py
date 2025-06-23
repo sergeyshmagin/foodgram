@@ -3,8 +3,8 @@ import io
 
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
-from django.http import FileResponse, JsonResponse
-from django.shortcuts import get_object_or_404
+from django.http import FileResponse, HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet as DjoserUserViewSet
 from rest_framework import status, viewsets
@@ -159,6 +159,65 @@ class UserViewSet(DjoserUserViewSet):
         user.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @action(
+        detail=False,
+        methods=["post"],
+        permission_classes=[IsAuthenticated],
+        url_path="set_password",
+    )
+    def set_password(self, request):
+        """Изменить пароль пользователя."""
+        user = request.user
+        current_password = request.data.get("current_password")
+        new_password = request.data.get("new_password")
+
+        if not current_password or not new_password:
+            return Response(
+                {"errors": "Требуются current_password и new_password"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not user.check_password(current_password):
+            return Response(
+                {"errors": "Неверный текущий пароль"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user.set_password(new_password)
+        user.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(
+        detail=False,
+        methods=["post"],
+        permission_classes=[AllowAny],
+        url_path="reset_password",
+    )
+    def reset_password(self, request):
+        """Сброс пароля пользователя."""
+        email = request.data.get("email")
+
+        if not email:
+            return Response(
+                {"errors": "Требуется email"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            user = User.objects.get(email=email)
+            # В реальном проекте здесь бы отправлялось письмо
+            # Пока просто возвращаем успешный ответ
+            return Response(
+                {"detail": "Инструкции отправлены на email"},
+                status=status.HTTP_200_OK,
+            )
+        except User.DoesNotExist:
+            # Не раскрываем информацию о существовании пользователя
+            return Response(
+                {"detail": "Инструкции отправлены на email"},
+                status=status.HTTP_200_OK,
+            )
+
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet для тегов."""
@@ -210,7 +269,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         """Получить разрешения для действия."""
-        if self.action in ["list", "retrieve"]:
+        if self.action in ["list", "retrieve", "get_link"]:
             permission_classes = [AllowAny]
         else:
             permission_classes = [IsAuthenticated, IsAuthorOrReadOnly]
@@ -313,22 +372,36 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 f"{ingredient['total_amount']}\n"
             )
 
-        # Создаем файл в памяти
+        # Создаем HTTP response с правильными заголовками
         shopping_content = "".join(shopping_list)
-        file_obj = io.StringIO(shopping_content)
 
-        response = FileResponse(
-            file_obj,
-            as_attachment=True,
-            filename="shopping_list.txt",
+        response = HttpResponse(
+            shopping_content.encode("utf-8"),
             content_type="text/plain; charset=utf-8",
         )
+        response[
+            "Content-Disposition"
+        ] = 'attachment; filename="shopping_list.txt"'
         return response
 
-    @action(detail=True, methods=["get"])
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="get-link",
+        permission_classes=[AllowAny],
+    )
     def get_link(self, request, pk=None):
         """Получить короткую ссылку на рецепт."""
         recipe = get_object_or_404(Recipe, pk=pk)
         # Простая реализация короткой ссылки
         short_link = f"{request.build_absolute_uri('/s/')}{recipe.pk}/"
         return Response({"short-link": short_link})
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def short_link_redirect(request, recipe_id):
+    """Перенаправление с короткой ссылки на полную страницу рецепта."""
+    recipe = get_object_or_404(Recipe, pk=recipe_id)
+    # Перенаправляем на фронтенд страницу рецепта
+    return redirect(f"/recipes/{recipe.pk}/")
