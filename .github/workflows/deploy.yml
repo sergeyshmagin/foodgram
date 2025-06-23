@@ -139,8 +139,10 @@ jobs:
           sleep 30
           
           echo "Проверка состояния контейнеров..."
-          if ! sudo docker compose -f infra/docker-compose.yml ps | grep nginx | grep -q "Up"; then
-            echo "⚠️  Nginx не запустился, возможно порт 80 занят. Освобождаем порт..."
+          
+          # Проверяем nginx контейнер
+          if ! sudo docker compose -f infra/docker-compose.yml ps | grep "foodgram-nginx" | grep -q "Up"; then
+            echo "⚠️  Nginx не запущен. Исправляем проблему с портом 80..."
             
             # Проверяем что занимает порт 80
             echo "Проверяем что использует порт 80..."
@@ -154,15 +156,33 @@ jobs:
             # Убиваем все процессы на порту 80
             echo "Принудительно освобождаем порт 80..."
             sudo fuser -k 80/tcp 2>/dev/null || echo "Нет процессов для завершения на порту 80"
+            sudo pkill nginx 2>/dev/null || echo "Нет nginx процессов"
             
-            # Ждём немного
+            # Ждём освобождения порта
             sleep 5
             
+            # Проверяем освобождение порта
+            if sudo netstat -tlnp | grep :80; then
+              echo "Порт 80 всё ещё занят. Принудительно завершаем все процессы..."
+              sudo pkill apache2 2>/dev/null || echo "Нет apache процессов"
+              sleep 3
+            fi
+            
             # Перезапускаем nginx контейнер
-            echo "Перезапускаем nginx контейнер..."
+            echo "Запускаем nginx контейнер..."
             sudo docker compose -f infra/docker-compose.yml up -d nginx
             
             sleep 10
+            
+            # Проверяем результат
+            if sudo docker compose -f infra/docker-compose.yml ps | grep nginx | grep -q "Up"; then
+              echo "✅ Nginx успешно запущен!"
+            else
+              echo "❌ Nginx всё ещё не запущен. Показываем логи:"
+              sudo docker compose -f infra/docker-compose.yml logs nginx
+            fi
+          else
+            echo "✅ Nginx уже запущен"
           fi
           
           sudo docker compose -f infra/docker-compose.yml ps
