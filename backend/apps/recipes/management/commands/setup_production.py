@@ -1,7 +1,7 @@
 """Management команда для загрузки базовых данных в продакшн."""
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
-from django.db import transaction
+from django.db import IntegrityError, transaction
 
 from apps.recipes.models import Tag
 
@@ -77,10 +77,23 @@ class Command(BaseCommand):
         ]
 
         for tag_data in tags_data:
-            tag, created = Tag.objects.get_or_create(
-                slug=tag_data["slug"], defaults=tag_data
-            )
-            if created:
-                self.stdout.write(f"✅ Создан тег: {tag_data['name']}")
-            else:
+            try:
+                # Сначала пытаемся получить тег
+                tag = Tag.objects.get(slug=tag_data["slug"])
                 self.stdout.write(f"ℹ️ Тег уже существует: {tag_data['name']}")
+            except Tag.DoesNotExist:
+                # Если тега нет, создаём новый
+                try:
+                    tag = Tag.objects.create(**tag_data)
+                    self.stdout.write(f"✅ Создан тег: {tag_data['name']}")
+                except IntegrityError:
+                    # На случай race condition - пытаемся получить ещё раз
+                    try:
+                        tag = Tag.objects.get(slug=tag_data["slug"])
+                        self.stdout.write(f"ℹ️ Тег уже существует: {tag_data['name']}")
+                    except Tag.DoesNotExist:
+                        self.stdout.write(
+                            self.style.WARNING(
+                                f"⚠️ Не удалось создать тег: {tag_data['name']}"
+                            )
+                        )
