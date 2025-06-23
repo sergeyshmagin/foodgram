@@ -24,11 +24,10 @@ urlpatterns = [
     path('api/', include('apps.api.urls')),
 ]
 
-# Подключение статических файлов и медиа в режиме разработки
-if settings.DEBUG:
+if settings.DEBUG or not settings.DEBUG:
     urlpatterns += static(
-        settings.MEDIA_URL, document_root=settings.MEDIA_ROOT
+        settings.STATIC_URL, document_root=settings.STATIC_ROOT
     )
     urlpatterns += static(
-        settings.STATIC_URL, document_root=settings.STATIC_ROOT  
+        settings.MEDIA_URL, document_root=settings.MEDIA_ROOT
     )

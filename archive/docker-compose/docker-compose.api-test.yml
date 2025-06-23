@@ -1,0 +1,134 @@
+version: '3.8'
+
+services:
+  # PostgreSQL база данных для тестирования
+  db:
+    container_name: foodgram-api-test-db
+    image: postgres:13.10
+    environment:
+      POSTGRES_DB: foodgram_test
+      POSTGRES_USER: foodgram_user
+      POSTGRES_PASSWORD: foodgram_password
+    volumes:
+      - pg_data_api_test:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U foodgram_user -d foodgram_test"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Redis для кеширования
+  redis:
+    container_name: foodgram-api-test-redis
+    image: redis:7.0-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data_api_test:/data
+    ports:
+      - "6380:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # MinIO для хранения файлов
+  minio:
+    container_name: foodgram-api-test-minio
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: foodgram_minio
+      MINIO_ROOT_PASSWORD: foodgram_minio_password
+    ports:
+      - "9002:9000"
+      - "9003:9001"
+    volumes:
+      - minio_data_api_test:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # Backend Django приложение для API тестирования
+  backend:
+    container_name: foodgram-api-test-backend
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      # Django настройки
+      - DEBUG=True
+      - DJANGO_SETTINGS_MODULE=foodgram.settings.development
+      - SECRET_KEY=test-secret-key-for-postman-api-testing-only
+      
+      # База данных
+      - DB_ENGINE=django.db.backends.postgresql
+      - DB_NAME=foodgram_test
+      - DB_USER=foodgram_user
+      - DB_PASSWORD=foodgram_password
+      - DB_HOST=db
+      - DB_PORT=5432
+      
+      # Redis
+      - REDIS_URL=redis://redis:6379/0
+      
+      # MinIO
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=foodgram_minio
+      - MINIO_SECRET_KEY=foodgram_minio_password
+      - MINIO_BUCKET_NAME=foodgram-media
+      - MINIO_USE_HTTPS=False
+      
+      # CORS для тестирования
+      - CORS_ALLOWED_ORIGINS=*
+      - ALLOWED_HOSTS=*
+      
+      # Email (заглушка для тестов)
+      - EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+      
+    ports:
+      - "8000:8000"
+    volumes:
+      - backend_media_api_test:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health/"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    command: >
+      sh -c "
+        echo '🚀 Запуск Foodgram API для тестирования Postman коллекции...' &&
+        echo '⏳ Применение миграций...' &&
+        python manage.py migrate &&
+        echo '📝 Создание тестовых данных...' &&
+        python manage.py loaddata fixtures/tags.json 2>/dev/null || echo 'Tags: используем существующие' &&
+        python manage.py loaddata fixtures/ingredients.json 2>/dev/null || echo 'Ingredients: используем существующие' &&
+        python manage.py create_test_data 2>/dev/null || echo 'Test data: используем существующие' &&
+        echo '📊 Сбор статических файлов...' &&
+        python manage.py collectstatic --noinput &&
+        echo '✅ Все готово! Запуск API сервера...' &&
+        echo '🌐 API доступен на: http://localhost:8000' &&
+        echo '📋 Health check: http://localhost:8000/api/health/' &&
+        python manage.py runserver 0.0.0.0:8000
+      "
+
+volumes:
+  pg_data_api_test:
+  redis_data_api_test:
+  minio_data_api_test:
+  backend_media_api_test: 

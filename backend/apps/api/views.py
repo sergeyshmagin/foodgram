@@ -30,9 +30,19 @@ User = get_user_model()
 @permission_classes([AllowAny])
 def health_check(request):
     """Health check endpoint for Docker."""
+    # Определяем версию API из DRF версионирования
+    version = getattr(request, 'version', 'v1')
+    
     return JsonResponse({
         'status': 'healthy',
-        'message': 'Foodgram API is running'
+        'message': f'Foodgram API {version} is running',
+        'version': version,
+        'api_endpoints': {
+            'users': f'/api/{version}/users/',
+            'recipes': f'/api/{version}/recipes/',
+            'tags': f'/api/{version}/tags/',
+            'ingredients': f'/api/{version}/ingredients/',
+        }
     })
 
 
@@ -40,6 +50,12 @@ class UserViewSet(DjoserUserViewSet):
     """ViewSet для управления пользователями."""
     
     serializer_class = UserSerializer
+    
+    def get_serializer_context(self):
+        """Добавляем версию API в контекст сериализатора."""
+        context = super().get_serializer_context()
+        context['api_version'] = getattr(self.request, 'version', 'v1')
+        return context
     
     @action(
         detail=False,
@@ -141,6 +157,12 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = TagSerializer
     permission_classes = [AllowAny]
     pagination_class = None
+    
+    def get_serializer_context(self):
+        """Добавляем версию API в контекст сериализатора."""
+        context = super().get_serializer_context()
+        context['api_version'] = getattr(self.request, 'version', 'v1')
+        return context
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
@@ -152,6 +174,12 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_class = IngredientFilter
     pagination_class = None
+    
+    def get_serializer_context(self):
+        """Добавляем версию API в контекст сериализатора."""
+        context = super().get_serializer_context()
+        context['api_version'] = getattr(self.request, 'version', 'v1')
+        return context
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -163,6 +191,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsAuthorOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     filterset_class = RecipeFilter
+    
+    def get_serializer_context(self):
+        """Добавляем версию API в контекст сериализатора."""
+        context = super().get_serializer_context()
+        context['api_version'] = getattr(self.request, 'version', 'v1')
+        return context
     
     def get_permissions(self):
         """Получить разрешения для действия."""

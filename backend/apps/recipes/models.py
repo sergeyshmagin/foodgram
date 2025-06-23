@@ -20,6 +20,19 @@ from foodgram.constants import (
 User = get_user_model()
 
 
+class TimeStampedModel(models.Model):
+    """Абстрактная модель с полем даты создания."""
+    
+    created = models.DateTimeField(
+        'Дата создания',
+        auto_now_add=True,
+        help_text='Дата создания записи'
+    )
+    
+    class Meta:
+        abstract = True
+
+
 class Tag(models.Model):
     """Модель тега для рецептов."""
 

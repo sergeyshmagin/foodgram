@@ -4,6 +4,7 @@
 import boto3
 from botocore.exceptions import ClientError
 import sys
+import json
 
 
 def create_minio_bucket():
@@ -24,18 +25,14 @@ def create_minio_bucket():
         try:
             s3_client.head_bucket(Bucket=bucket_name)
             print(f"✅ Bucket '{bucket_name}' already exists")
-            return True
         except ClientError as e:
             if e.response['Error']['Code'] == '404':
-                # Bucket doesn't exist, create it
-                pass
+                # Create bucket if it doesn't exist
+                s3_client.create_bucket(Bucket=bucket_name)
+                print(f"✅ Bucket '{bucket_name}' created successfully")
             else:
                 print(f"❌ Error checking bucket: {e}")
                 return False
-        
-        # Create bucket
-        s3_client.create_bucket(Bucket=bucket_name)
-        print(f"✅ Bucket '{bucket_name}' created successfully")
         
         # Set bucket policy to public read for static files
         bucket_policy = {
@@ -51,14 +48,33 @@ def create_minio_bucket():
             ]
         }
         
+        # Always update bucket policy
         try:
+            policy_json = json.dumps(bucket_policy)
             s3_client.put_bucket_policy(
                 Bucket=bucket_name,
-                Policy=str(bucket_policy).replace("'", '"')
+                Policy=policy_json
             )
-            print(f"✅ Bucket policy set for '{bucket_name}'")
+            print(f"✅ Bucket policy updated for '{bucket_name}'")
+            print(f"📋 Policy: {policy_json}")
         except Exception as e:
             print(f"⚠️  Warning: Could not set bucket policy: {e}")
+            
+        # List static files to verify they exist
+        try:
+            response = s3_client.list_objects_v2(
+                Bucket=bucket_name,
+                Prefix='static/',
+                MaxKeys=5
+            )
+            if 'Contents' in response:
+                print(f"✅ Found {len(response['Contents'])} static files in bucket")
+                for obj in response['Contents'][:3]:
+                    print(f"   📄 {obj['Key']}")
+            else:
+                print("⚠️  No static files found in bucket - run collectstatic")
+        except Exception as e:
+            print(f"⚠️  Could not list bucket contents: {e}")
         
         return True
         
