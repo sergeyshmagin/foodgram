@@ -1,0 +1,69 @@
+name: Fix Nginx Port 80 Issue
+
+on:
+  workflow_dispatch:
+
+env:
+  PROD_HOST: 89.169.174.76
+
+jobs:
+  fix-nginx:
+    name: Fix nginx container
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Fix nginx port 80 issue
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ env.PROD_HOST }}
+        username: ${{ secrets.PROD_USER }}
+        key: ${{ secrets.PROD_SSH_KEY }}
+        debug: true
+        script: |
+          set -e
+          
+          echo "🔧 ИСПРАВЛЕНИЕ ПРОБЛЕМЫ С NGINX"
+          
+          # Переходим в директорию проекта
+          cd $HOME/foodgram
+          
+          echo "Проверяем что занимает порт 80..."
+          sudo netstat -tlnp | grep :80 || echo "Нет процессов на порту 80"
+          sudo lsof -i :80 || echo "Порт 80 свободен"
+          
+          echo "Останавливаем системный nginx..."
+          sudo systemctl stop nginx 2>/dev/null || echo "Системный nginx не запущен"
+          sudo systemctl disable nginx 2>/dev/null || echo "Системный nginx уже отключен"
+          
+          echo "Убиваем процессы на порту 80..."
+          sudo fuser -k 80/tcp 2>/dev/null || echo "Порт 80 уже свободен"
+          
+          sleep 5
+          
+          echo "Проверяем освобождение порта..."
+          if sudo netstat -tlnp | grep :80; then
+            echo "❌ Порт 80 всё ещё занят:"
+            sudo netstat -tlnp | grep :80
+            echo "Принудительно завершаем процессы..."
+            sudo pkill nginx 2>/dev/null || echo "Nginx процессы не найдены"
+            sudo pkill apache2 2>/dev/null || echo "Apache процессы не найдены"
+            sleep 3
+          fi
+          
+          echo "Перезапускаем nginx контейнер..."
+          sudo docker compose -f infra/docker-compose.yml restart nginx || \
+          sudo docker compose -f infra/docker-compose.yml up -d nginx
+          
+          sleep 10
+          
+          echo "Проверяем статус контейнеров..."
+          sudo docker compose -f infra/docker-compose.yml ps
+          
+          echo "Проверяем логи nginx..."
+          sudo docker compose -f infra/docker-compose.yml logs --tail=20 nginx
+          
+          echo "Тестируем доступность..."
+          curl -s -o /dev/null -w "HTTP код: %{http_code}\n" http://localhost/ || echo "Сайт недоступен"
+          
+          echo "✅ ИСПРАВЛЕНИЕ ЗАВЕРШЕНО!"
+          echo "🌐 Сайт должен быть доступен на: http://${{ env.PROD_HOST }}" 
