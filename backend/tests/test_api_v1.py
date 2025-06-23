@@ -62,7 +62,7 @@ class TestUserAPI:
         response = authenticated_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_204_NO_CONTENT
-        
+
         # Проверяем, что пароль действительно изменился
         user.refresh_from_db()
         assert user.check_password("newpass123")
@@ -97,7 +97,8 @@ class TestUserAPI:
 
         response = api_client.post(url, data, format="json")
 
-        # Должен возвращать тот же ответ, чтобы не раскрывать существование пользователя
+        # Должен возвращать тот же ответ, чтобы не раскрывать
+        # существование пользователя
         assert response.status_code == status.HTTP_200_OK
         assert "Инструкции отправлены на email" in str(response.data)
 

@@ -1,9 +1,7 @@
 """Views for Foodgram API."""
-import io
-
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
-from django.http import FileResponse, HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet as DjoserUserViewSet
@@ -204,7 +202,7 @@ class UserViewSet(DjoserUserViewSet):
             )
 
         try:
-            user = User.objects.get(email=email)
+            User.objects.get(email=email)
             # В реальном проекте здесь бы отправлялось письмо
             # Пока просто возвращаем успешный ответ
             return Response(
