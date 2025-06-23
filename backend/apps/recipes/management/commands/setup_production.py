@@ -31,26 +31,38 @@ class Command(BaseCommand):
         """Создание администратора."""
         self.stdout.write("👤 Создание администратора...")
 
-        admin, created = User.objects.get_or_create(
-            email="admin@foodgram.local",
-            defaults={
-                "username": "admin",
-                "first_name": "Администратор",
-                "last_name": "Foodgram",
-                "is_staff": True,
-                "is_superuser": True,
-            },
-        )
+        # Сначала ищем по username, если не найден - создаём
+        try:
+            admin = User.objects.get(username="admin")
+            created = False
+            self.stdout.write("ℹ️ Администратор найден по username")
+        except User.DoesNotExist:
+            # Пробуем найти по email
+            try:
+                admin = User.objects.get(email="admin@foodgram.local")
+                created = False
+                self.stdout.write("ℹ️ Администратор найден по email")
+            except User.DoesNotExist:
+                # Создаём нового администратора
+                admin = User.objects.create_user(
+                    username="admin",
+                    email="admin@foodgram.local",
+                    first_name="Администратор",
+                    last_name="Foodgram",
+                )
+                created = True
+                self.stdout.write("✅ Администратор создан")
 
-        # Всегда обновляем пароль для безопасности
-        admin.set_password("admin123")
+        # Всегда обновляем права и пароль для безопасности
+        admin.email = "admin@foodgram.local"
+        admin.first_name = "Администратор"
+        admin.last_name = "Foodgram"
         admin.is_staff = True
         admin.is_superuser = True
+        admin.set_password("admin123")
         admin.save()
 
-        if created:
-            self.stdout.write("✅ Администратор создан")
-        else:
+        if not created:
             self.stdout.write("✅ Администратор обновлён")
 
     def _create_tags(self):

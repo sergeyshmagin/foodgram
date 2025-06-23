@@ -277,7 +277,7 @@ class TestRecipeAPI:
 
         # Проверяем, что происходит редирект
         assert response.status_code == 302
-        assert response.url == f"/recipes/{recipe.pk}/"
+        assert response.url == f"/recipes/{recipe.pk}"
 
 
 @pytest.mark.django_db

@@ -408,4 +408,4 @@ def short_link_redirect(request, recipe_id):
     """Перенаправление с короткой ссылки на полную страницу рецепта."""
     recipe = get_object_or_404(Recipe, pk=recipe_id)
     # Перенаправляем на фронтенд страницу рецепта
-    return redirect(f"/recipes/{recipe.pk}/")
+    return redirect(f"/recipes/{recipe.pk}")

@@ -129,7 +129,7 @@ scripts/deploy/
 └── setup-test-data.yml          # GitHub Actions workflow
 
 backend/apps/recipes/management/commands/
-├── setup_production.py          # Команда базовых данных
-├── load_ingredients.py          # Команда загрузки ингредиентов
-└── load_demo_data.py            # Команда демо-данных (опционально)
+├── setup_production.py          # Команда базовых данных (админ + теги)
+├── load_ingredients.py          # Команда загрузки ингредиентов из CSV
+└── load_demo_data.py            # Команда демо-данных (рецепты)
 ``` 
