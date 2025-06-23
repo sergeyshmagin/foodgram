@@ -1,6 +1,7 @@
 """Admin configuration for users app."""
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.models import Group
 from django.utils.safestring import mark_safe
 
 from .models import User
@@ -70,3 +71,7 @@ class CustomUserAdmin(BaseUserAdmin):
                 f'style="border-radius: 50%;" />'
             )
         return '—'
+
+
+# Отключаем стандартную модель Group из админки
+admin.site.unregister(Group)

@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.test import RequestFactory
 
 from apps.recipes.admin import RecipeAdmin, TagAdmin, IngredientAdmin
-from apps.recipes.models import Recipe, Tag, Ingredient, RecipeIngredient
+from apps.recipes.models import Recipe, Tag, Ingredient, IngredientInRecipe
 from apps.users.admin import CustomUserAdmin
 
 User = get_user_model()
@@ -24,17 +24,25 @@ class TestRecipeAdmin:
     
     def test_recipe_admin_list_display(self):
         """Тест отображения списка рецептов в админке."""
-        expected_fields = ['name', 'author', 'cooking_time', 'favorites_count']
+        expected_fields = (
+            'id', 
+            'name', 
+            'author', 
+            'image_preview',
+            'cooking_time',
+            'favorites_count',
+            'created'
+        )
         assert self.admin.list_display == expected_fields
     
     def test_recipe_admin_list_filter(self):
         """Тест фильтров в админке рецептов."""
-        expected_filters = ['tags', 'pub_date']
+        expected_filters = ('tags', 'created', 'author')
         assert self.admin.list_filter == expected_filters
     
     def test_recipe_admin_search_fields(self):
         """Тест полей поиска в админке рецептов."""
-        expected_fields = ['name', 'text']
+        expected_fields = ('name', 'author__username', 'author__email')
         assert self.admin.search_fields == expected_fields
     
     def test_favorites_count_method(self, user, recipe):
@@ -43,8 +51,15 @@ class TestRecipeAdmin:
         from apps.recipes.models import Favorite
         Favorite.objects.create(user=user, recipe=recipe)
         
+        # Получаем рецепт с аннотацией как в админке
+        from django.db.models import Count
+        from apps.recipes.models import Recipe
+        recipe_with_annotation = Recipe.objects.annotate(
+            favorites_count_annotated=Count('favorited_by')
+        ).get(pk=recipe.pk)
+        
         # Проверяем метод
-        count = self.admin.favorites_count(recipe)
+        count = self.admin.favorites_count(recipe_with_annotation)
         assert count == 1
     
     def test_favorites_count_method_zero(self, recipe):
@@ -55,7 +70,7 @@ class TestRecipeAdmin:
     def test_favorites_count_display_description(self):
         """Тест описания метода favorites_count."""
         assert hasattr(self.admin.favorites_count, 'short_description')
-        assert self.admin.favorites_count.short_description == 'Количество в избранном'
+        assert self.admin.favorites_count.short_description == 'В избранном'
 
 
 @pytest.mark.django_db
@@ -69,17 +84,26 @@ class TestCustomUserAdmin:
     
     def test_user_admin_list_display(self):
         """Тест отображения списка пользователей."""
-        expected_fields = ['email', 'username', 'first_name', 'last_name', 'is_staff']
+        expected_fields = (
+            'id', 
+            'username', 
+            'email', 
+            'first_name', 
+            'last_name',
+            'avatar_preview',
+            'is_active',
+            'date_joined'
+        )
         assert self.admin.list_display == expected_fields
     
     def test_user_admin_search_fields(self):
         """Тест полей поиска в админке пользователей."""
-        expected_fields = ['email', 'username']
+        expected_fields = ('username', 'email', 'first_name', 'last_name')
         assert self.admin.search_fields == expected_fields
     
     def test_user_admin_ordering(self):
         """Тест сортировки в админке пользователей."""
-        expected_ordering = ['email']
+        expected_ordering = ('-date_joined',)
         assert self.admin.ordering == expected_ordering
 
 
@@ -98,9 +122,8 @@ class TestTagAdmin:
     
     def test_tag_admin_list_display(self):
         """Тест отображения списка тегов."""
-        # Проверяем основные поля
-        assert 'name' in self.admin.list_display
-        assert 'slug' in self.admin.list_display
+        expected_fields = ('id', 'name', 'color_display', 'slug')
+        assert self.admin.list_display == expected_fields
 
 
 @pytest.mark.django_db
@@ -118,13 +141,12 @@ class TestIngredientAdmin:
     
     def test_ingredient_admin_list_display(self):
         """Тест отображения списка ингредиентов."""
-        # Проверяем основные поля
-        assert 'name' in self.admin.list_display
-        assert 'measurement_unit' in self.admin.list_display
+        expected_fields = ('id', 'name', 'measurement_unit')
+        assert self.admin.list_display == expected_fields
     
     def test_ingredient_admin_search_fields(self):
         """Тест полей поиска в админке ингредиентов."""
-        expected_fields = ['name']
+        expected_fields = ('name',)
         assert self.admin.search_fields == expected_fields
 
 
@@ -177,6 +199,11 @@ class TestAdminPermissions:
     
     def test_admin_access_for_staff_user(self, staff_user):
         """Тест доступа staff пользователя к админке."""
+        # Добавляем права на просмотр рецептов
+        from django.contrib.auth.models import Permission
+        permission = Permission.objects.get(codename='view_recipe')
+        staff_user.user_permissions.add(permission)
+        
         request = self.factory.get('/admin/')
         request.user = staff_user
         
