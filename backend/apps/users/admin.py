@@ -4,6 +4,8 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import Group
 from django.utils.safestring import mark_safe
 
+from foodgram.constants import IMAGE_PREVIEW_SIZE
+
 from .models import User
 
 
@@ -78,8 +80,8 @@ class CustomUserAdmin(BaseUserAdmin):
         """Предварительный просмотр аватара."""
         if obj.avatar:
             return mark_safe(
-                f'<img src="{obj.avatar.url}" width="50" height="50" '
-                f'style="border-radius: 50%;" />'
+                f'<img src="{obj.avatar.url}" width="{IMAGE_PREVIEW_SIZE//2}" '
+                f'height="{IMAGE_PREVIEW_SIZE//2}" style="border-radius: 50%;" />'
             )
         return "—"
 

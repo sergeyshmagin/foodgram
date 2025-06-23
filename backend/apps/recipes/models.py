@@ -25,7 +25,45 @@ class TimeStampedModel(models.Model):
         abstract = True
 
 
-class Tag(models.Model):
+class UserActionModel(TimeStampedModel):
+    """Абстрактная модель для действий пользователей (избранное, корзина, подписки)."""
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name="Пользователь",
+    )
+
+    class Meta:
+        abstract = True
+        ordering = ["-created"]
+
+
+class NameSlugModel(models.Model):
+    """Абстрактная модель с полями name и slug."""
+
+    name = models.CharField(
+        "Название",
+        max_length=200,
+        unique=True,
+        help_text="Уникальное название",
+    )
+    slug = models.SlugField(
+        "Слаг",
+        max_length=200,
+        unique=True,
+        help_text="Уникальный слаг",
+    )
+
+    class Meta:
+        abstract = True
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
+class Tag(NameSlugModel):
     """Модель тега для рецептов."""
 
     name = models.CharField(
@@ -47,16 +85,11 @@ class Tag(models.Model):
         help_text="Уникальный слаг для тега",
     )
 
-    class Meta:
+    class Meta(NameSlugModel.Meta):
         """Метаданные модели Tag."""
 
         verbose_name = "Тег"
         verbose_name_plural = "Теги"
-        ordering = ["name"]
-
-    def __str__(self):
-        """Строковое представление тега."""
-        return self.name
 
 
 class Ingredient(models.Model):
@@ -215,7 +248,7 @@ class IngredientInRecipe(models.Model):
         return f"{self.ingredient.name} в {self.recipe.name}"
 
 
-class Favorite(models.Model):
+class Favorite(UserActionModel):
     """Модель избранных рецептов."""
 
     user = models.ForeignKey(
@@ -230,14 +263,12 @@ class Favorite(models.Model):
         related_name="favorited_by",
         verbose_name="Рецепт",
     )
-    created = models.DateTimeField("Дата добавления", auto_now_add=True)
 
-    class Meta:
+    class Meta(UserActionModel.Meta):
         """Метаданные модели Favorite."""
 
         verbose_name = "Избранное"
         verbose_name_plural = "Избранные рецепты"
-        ordering = ["-created"]
         constraints = [
             models.UniqueConstraint(
                 fields=["user", "recipe"], name="unique_user_favorite_recipe"
@@ -249,7 +280,7 @@ class Favorite(models.Model):
         return f"{self.user.username} добавил {self.recipe.name} в избранное"
 
 
-class ShoppingCart(models.Model):
+class ShoppingCart(UserActionModel):
     """Модель списка покупок."""
 
     user = models.ForeignKey(
@@ -264,14 +295,12 @@ class ShoppingCart(models.Model):
         related_name="in_shopping_cart",
         verbose_name="Рецепт",
     )
-    created = models.DateTimeField("Дата добавления", auto_now_add=True)
 
-    class Meta:
+    class Meta(UserActionModel.Meta):
         """Метаданные модели ShoppingCart."""
 
         verbose_name = "Корзина"
         verbose_name_plural = "Корзины покупок"
-        ordering = ["-created"]
         constraints = [
             models.UniqueConstraint(
                 fields=["user", "recipe"],
@@ -284,7 +313,7 @@ class ShoppingCart(models.Model):
         return f"{self.user.username} добавил {self.recipe.name} в корзину"
 
 
-class Subscription(models.Model):
+class Subscription(UserActionModel):
     """Модель подписок на авторов."""
 
     user = models.ForeignKey(
@@ -299,14 +328,12 @@ class Subscription(models.Model):
         related_name="subscribers",
         verbose_name="Автор",
     )
-    created = models.DateTimeField("Дата подписки", auto_now_add=True)
 
-    class Meta:
+    class Meta(UserActionModel.Meta):
         """Метаданные модели Subscription."""
 
         verbose_name = "Подписка"
         verbose_name_plural = "Подписки"
-        ordering = ["-created"]
         constraints = [
             models.UniqueConstraint(
                 fields=["user", "author"],

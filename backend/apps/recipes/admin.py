@@ -3,6 +3,13 @@ from django.contrib import admin
 from django.db.models import Count
 from django.utils.safestring import mark_safe
 
+from foodgram.constants import (
+    ADMIN_LIST_PER_PAGE,
+    ADMIN_LIST_PER_PAGE_LARGE,
+    COLOR_PREVIEW_SIZE,
+    IMAGE_PREVIEW_SIZE,
+)
+
 from .models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
                      ShoppingCart, Subscription, Tag)
 
@@ -23,13 +30,14 @@ class TagAdmin(admin.ModelAdmin):
     list_display_links = ("id", "name")
     search_fields = ("name", "slug")
     prepopulated_fields = {"slug": ("name",)}
-    list_per_page = 20
+    list_per_page = ADMIN_LIST_PER_PAGE
 
     @admin.display(description="Цвет")
     def color_display(self, obj):
         """Отображение цвета."""
         return mark_safe(
-            f'<div style="width: 20px; height: 20px; '
+            f'<div style="width: {COLOR_PREVIEW_SIZE}px; '
+            f'height: {COLOR_PREVIEW_SIZE}px; '
             f'background-color: {obj.color}; border: 1px solid #ccc;"></div>'
         )
 
@@ -42,7 +50,7 @@ class IngredientAdmin(admin.ModelAdmin):
     list_display_links = ("id", "name")
     search_fields = ("name",)
     list_filter = ("measurement_unit",)
-    list_per_page = 50
+    list_per_page = ADMIN_LIST_PER_PAGE_LARGE
 
 
 @admin.register(Recipe)
@@ -64,7 +72,7 @@ class RecipeAdmin(admin.ModelAdmin):
     readonly_fields = ("created", "image_preview", "favorites_count")
     filter_horizontal = ("tags",)
     inlines = (IngredientInRecipeInline,)
-    list_per_page = 20
+    list_per_page = ADMIN_LIST_PER_PAGE
 
     fieldsets = (
         (None, {"fields": ("name", "author", "image", "image_preview")}),
@@ -92,8 +100,8 @@ class RecipeAdmin(admin.ModelAdmin):
         """Предварительный просмотр изображения."""
         if obj.image:
             return mark_safe(
-                f'<img src="{obj.image.url}" width="100" height="100" '
-                f'style="object-fit: cover;" />'
+                f'<img src="{obj.image.url}" width="{IMAGE_PREVIEW_SIZE}" '
+                f'height="{IMAGE_PREVIEW_SIZE}" style="object-fit: cover;" />'
             )
         return "—"
 
@@ -113,7 +121,7 @@ class IngredientInRecipeAdmin(admin.ModelAdmin):
     list_display_links = ("id",)
     list_filter = ("ingredient__measurement_unit",)
     search_fields = ("recipe__name", "ingredient__name")
-    list_per_page = 50
+    list_per_page = ADMIN_LIST_PER_PAGE_LARGE
 
 
 @admin.register(Favorite)
@@ -124,7 +132,7 @@ class FavoriteAdmin(admin.ModelAdmin):
     list_display_links = ("id",)
     list_filter = ("created",)
     search_fields = ("user__username", "recipe__name")
-    list_per_page = 50
+    list_per_page = ADMIN_LIST_PER_PAGE_LARGE
 
 
 @admin.register(ShoppingCart)
@@ -135,7 +143,7 @@ class ShoppingCartAdmin(admin.ModelAdmin):
     list_display_links = ("id",)
     list_filter = ("created",)
     search_fields = ("user__username", "recipe__name")
-    list_per_page = 50
+    list_per_page = ADMIN_LIST_PER_PAGE_LARGE
 
 
 @admin.register(Subscription)
@@ -146,4 +154,4 @@ class SubscriptionAdmin(admin.ModelAdmin):
     list_display_links = ("id",)
     list_filter = ("created",)
     search_fields = ("user__username", "author__username")
-    list_per_page = 50
+    list_per_page = ADMIN_LIST_PER_PAGE_LARGE
