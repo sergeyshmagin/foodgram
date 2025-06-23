@@ -363,7 +363,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         # Формируем текст файла
         shopping_list = ["Список покупок\n\n"]
-        
         if not ingredients.exists():
             shopping_list.append(
                 "Ваша корзина пуста.\n"

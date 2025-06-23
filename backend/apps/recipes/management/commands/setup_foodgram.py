@@ -152,13 +152,13 @@ class Command(BaseCommand):
 
             created_count = 0
             total_count = 0
-            
+
             with open(ingredients_file, "r", encoding="utf-8") as csvfile:
                 reader = csv.reader(csvfile)
                 for row in reader:
                     if len(row) < 2:
                         continue
-                        
+
                     name = row[0].strip()
                     unit = row[1].strip()
                     total_count += 1
@@ -172,16 +172,19 @@ class Command(BaseCommand):
                     )
                     if created:
                         created_count += 1
-                        
+
                     # Показываем прогресс каждые 100 ингредиентов
                     if total_count % 100 == 0:
-                        self.stdout.write(f"Обработано {total_count} записей...")
+                        self.stdout.write(
+                            f"Обработано {total_count} записей..."
+                        )
 
             self.stdout.write(
                 f"✅ Загружено {created_count} новых ингредиентов"
             )
             self.stdout.write(
-                f"📊 Всего ингредиентов в базе: {Ingredient.objects.count()}"
+                f"📊 Всего ингредиентов в базе: "
+                f"{Ingredient.objects.count()}"
             )
 
         except Exception as e:
