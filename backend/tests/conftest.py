@@ -2,12 +2,7 @@
 import base64
 import os
 
-# Настройка Django перед импортом моделей
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'foodgram.settings.development')
-
 import django
-django.setup()
-
 import pytest
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -15,6 +10,12 @@ from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
 from apps.recipes.models import Ingredient, Recipe, Tag
+
+# Настройка Django перед импортом моделей
+os.environ.setdefault(
+    'DJANGO_SETTINGS_MODULE', 'foodgram.settings.development'
+)
+django.setup()
 
 User = get_user_model()
 

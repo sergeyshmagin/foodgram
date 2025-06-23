@@ -58,7 +58,8 @@ class Command(BaseCommand):
                 if len(row) != 2:
                     self.stdout.write(
                         self.style.WARNING(
-                            f"Строка {row_num}: неверное количество полей: {row}"
+                            f"Строка {row_num}: неверное количество "
+                            f"полей: {row}"
                         )
                     )
                     continue

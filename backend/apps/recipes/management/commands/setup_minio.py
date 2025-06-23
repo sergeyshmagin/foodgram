@@ -78,7 +78,8 @@ class Command(BaseCommand):
                 )
                 self.stdout.write(
                     self.style.SUCCESS(
-                        "Successfully set bucket policy for public media access"
+                        "Successfully set bucket policy for public "
+                        "media access"
                     )
                 )
             except ClientError as policy_error:
