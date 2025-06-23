@@ -211,6 +211,14 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
             if not ingredient_id:
                 raise serializers.ValidationError("ID ингредиента обязателен.")
 
+            # Преобразуем amount в число для валидации
+            try:
+                amount = int(amount) if amount else 0
+            except (ValueError, TypeError):
+                raise serializers.ValidationError(
+                    "Количество ингредиента должно быть числом."
+                )
+            
             if not amount or amount < 1:
                 raise serializers.ValidationError(
                     "Количество ингредиента должно быть больше 0."
