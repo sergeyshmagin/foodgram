@@ -10,8 +10,15 @@ from foodgram.constants import (
     IMAGE_PREVIEW_SIZE,
 )
 
-from .models import (Favorite, Ingredient, IngredientInRecipe, Recipe,
-                     ShoppingCart, Subscription, Tag)
+from .models import (
+    Favorite,
+    Ingredient,
+    IngredientInRecipe,
+    Recipe,
+    ShoppingCart,
+    Subscription,
+    Tag,
+)
 
 
 class IngredientInRecipeInline(admin.TabularInline):
@@ -37,7 +44,7 @@ class TagAdmin(admin.ModelAdmin):
         """Отображение цвета."""
         return mark_safe(
             f'<div style="width: {COLOR_PREVIEW_SIZE}px; '
-            f'height: {COLOR_PREVIEW_SIZE}px; '
+            f"height: {COLOR_PREVIEW_SIZE}px; "
             f'background-color: {obj.color}; border: 1px solid #ccc;"></div>'
         )
 

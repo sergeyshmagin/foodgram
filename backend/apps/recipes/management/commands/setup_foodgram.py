@@ -1,9 +1,10 @@
 """Management команда для полной настройки Foodgram с тестовыми данными."""
 import random
+
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.conf import settings
 
 from apps.recipes.models import Ingredient, Recipe, Tag
 
@@ -17,15 +18,11 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--clear",
-            action="store_true",
-            help="Очистить все данные"
+            "--clear", action="store_true", help="Очистить все данные"
         )
 
     def handle(self, *args, **options):
-        self.stdout.write(
-            self.style.SUCCESS("🚀 Настройка Foodgram")
-        )
+        self.stdout.write(self.style.SUCCESS("🚀 Настройка Foodgram"))
 
         if options["clear"]:
             self.clear_data()
@@ -59,7 +56,7 @@ class Command(BaseCommand):
                 "last_name": "Foodgram",
                 "is_staff": True,
                 "is_superuser": True,
-            }
+            },
         )
 
         if created:
@@ -81,10 +78,7 @@ class Command(BaseCommand):
         ]
 
         for tag_data in tags_data:
-            Tag.objects.get_or_create(
-                slug=tag_data["slug"],
-                defaults=tag_data
-            )
+            Tag.objects.get_or_create(slug=tag_data["slug"], defaults=tag_data)
             self.stdout.write(f"✅ {tag_data['name']}")
 
     def create_users(self):
@@ -108,8 +102,7 @@ class Command(BaseCommand):
 
         for user_data in users_data:
             user, created = User.objects.get_or_create(
-                email=user_data["email"],
-                defaults=user_data
+                email=user_data["email"], defaults=user_data
             )
             if created:
                 user.set_password("testpass123")
@@ -118,42 +111,52 @@ class Command(BaseCommand):
 
     def create_ingredients(self):
         """Создание ингредиентов из JSON файла."""
-        self.stdout.write("🥕 Загрузка ингредиентов из data/ingredients.json...")
+        self.stdout.write(
+            "🥕 Загрузка ингредиентов из data/ingredients.json..."
+        )
 
         try:
             import json
             import os
+
             from django.conf import settings
 
             # Путь к файлу с ингредиентами
-            base_dir = getattr(settings, 'BASE_DIR', '').parent
-            ingredients_file = os.path.join(base_dir, 'data', 'ingredients.json')
+            base_dir = getattr(settings, "BASE_DIR", "").parent
+            ingredients_file = os.path.join(
+                base_dir, "data", "ingredients.json"
+            )
 
             if not os.path.exists(ingredients_file):
-                self.stdout.write("⚠️ Файл ingredients.json не найден, создаем базовые ингредиенты")
+                self.stdout.write(
+                    "⚠️ Файл ingredients.json не найден, создаем базовые ингредиенты"
+                )
                 self._create_basic_ingredients()
                 return
 
-            with open(ingredients_file, 'r', encoding='utf-8') as f:
+            with open(ingredients_file, "r", encoding="utf-8") as f:
                 ingredients_data = json.load(f)
 
             created_count = 0
             for ingredient_data in ingredients_data:
-                name = ingredient_data.get('name', '').strip()
-                unit = ingredient_data.get('measurement_unit', '').strip()
+                name = ingredient_data.get("name", "").strip()
+                unit = ingredient_data.get("measurement_unit", "").strip()
 
                 if not name or not unit:
                     continue
 
                 ingredient, created = Ingredient.objects.get_or_create(
-                    name=name,
-                    measurement_unit=unit
+                    name=name, measurement_unit=unit
                 )
                 if created:
                     created_count += 1
 
-            self.stdout.write(f"✅ Загружено {created_count} новых ингредиентов")
-            self.stdout.write(f"📊 Всего ингредиентов: {Ingredient.objects.count()}")
+            self.stdout.write(
+                f"✅ Загружено {created_count} новых ингредиентов"
+            )
+            self.stdout.write(
+                f"📊 Всего ингредиентов: {Ingredient.objects.count()}"
+            )
 
         except Exception as e:
             self.stdout.write(f"❌ Ошибка загрузки ингредиентов: {e}")
@@ -163,14 +166,16 @@ class Command(BaseCommand):
     def _create_basic_ingredients(self):
         """Создание базовых ингредиентов."""
         basic_ingredients = [
-            ("Мука", "г"), ("Сахар", "г"), ("Яйца", "шт"),
-            ("Молоко", "мл"), ("Масло", "г"), ("Соль", "г")
+            ("Мука", "г"),
+            ("Сахар", "г"),
+            ("Яйца", "шт"),
+            ("Молоко", "мл"),
+            ("Масло", "г"),
+            ("Соль", "г"),
         ]
 
         for name, unit in basic_ingredients:
-            Ingredient.objects.get_or_create(
-                name=name, measurement_unit=unit
-            )
+            Ingredient.objects.get_or_create(name=name, measurement_unit=unit)
 
     def setup_minio(self):
         """Настройка MinIO bucket."""
@@ -181,11 +186,11 @@ class Command(BaseCommand):
             from botocore.exceptions import ClientError
 
             # Получаем настройки из settings
-            minio_config = getattr(settings, 'AWS_S3_ENDPOINT_URL', None)
-            access_key = getattr(settings, 'AWS_ACCESS_KEY_ID', None)
-            secret_key = getattr(settings, 'AWS_SECRET_ACCESS_KEY', None)
+            minio_config = getattr(settings, "AWS_S3_ENDPOINT_URL", None)
+            access_key = getattr(settings, "AWS_ACCESS_KEY_ID", None)
+            secret_key = getattr(settings, "AWS_SECRET_ACCESS_KEY", None)
             bucket_name = getattr(
-                settings, 'AWS_STORAGE_BUCKET_NAME', 'foodgram-static'
+                settings, "AWS_STORAGE_BUCKET_NAME", "foodgram-static"
             )
 
             if not all([minio_config, access_key, secret_key]):
@@ -194,11 +199,11 @@ class Command(BaseCommand):
 
             # Создаем клиент S3 для MinIO
             s3_client = boto3.client(
-                's3',
+                "s3",
                 endpoint_url=minio_config,
                 aws_access_key_id=access_key,
                 aws_secret_access_key=secret_key,
-                region_name='us-east-1'
+                region_name="us-east-1",
             )
 
             # Проверяем существует ли bucket
@@ -206,8 +211,8 @@ class Command(BaseCommand):
                 s3_client.head_bucket(Bucket=bucket_name)
                 self.stdout.write(f"✅ Bucket {bucket_name} уже существует")
             except ClientError as e:
-                error_code = e.response['Error']['Code']
-                if error_code == '404':
+                error_code = e.response["Error"]["Code"]
+                if error_code == "404":
                     # Bucket не существует, создаем его
                     try:
                         s3_client.create_bucket(Bucket=bucket_name)
@@ -241,14 +246,14 @@ class Command(BaseCommand):
                 "name": "Блинчики",
                 "text": "Вкусные блинчики на завтрак",
                 "cooking_time": 30,
-                "tag_slug": "breakfast"
+                "tag_slug": "breakfast",
             },
             {
                 "name": "Борщ",
                 "text": "Традиционный борщ",
                 "cooking_time": 120,
-                "tag_slug": "lunch"
-            }
+                "tag_slug": "lunch",
+            },
         ]
 
         for recipe_data in recipes_data:
@@ -260,7 +265,7 @@ class Command(BaseCommand):
                     "author": author,
                     "text": recipe_data["text"],
                     "cooking_time": recipe_data["cooking_time"],
-                }
+                },
             )
 
             if created:

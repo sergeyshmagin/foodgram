@@ -13,7 +13,7 @@ from apps.recipes.models import Ingredient, Recipe, Tag
 
 # Настройка Django перед импортом моделей
 os.environ.setdefault(
-    'DJANGO_SETTINGS_MODULE', 'foodgram.settings.development'
+    "DJANGO_SETTINGS_MODULE", "foodgram.settings.development"
 )
 django.setup()
 

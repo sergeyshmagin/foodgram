@@ -2,10 +2,13 @@
 import pytest
 from django.contrib.auth import get_user_model
 
-from apps.api.serializers import (IngredientSerializer,
-                                  RecipeCreateUpdateSerializer,
-                                  RecipeMinifiedSerializer, TagSerializer,
-                                  UserSerializer)
+from apps.api.serializers import (
+    IngredientSerializer,
+    RecipeCreateUpdateSerializer,
+    RecipeMinifiedSerializer,
+    TagSerializer,
+    UserSerializer,
+)
 
 User = get_user_model()
 

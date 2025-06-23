@@ -1,6 +1,7 @@
 """Management команда для загрузки демонстрационных данных."""
 import random
 from io import BytesIO
+
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
@@ -12,8 +13,13 @@ except ImportError:
     Image = None
 
 from apps.recipes.models import (
-    Ingredient, IngredientInRecipe, Recipe, Tag,
-    Favorite, ShoppingCart, Subscription
+    Favorite,
+    Ingredient,
+    IngredientInRecipe,
+    Recipe,
+    ShoppingCart,
+    Subscription,
+    Tag,
 )
 
 User = get_user_model()
@@ -72,7 +78,7 @@ class Command(BaseCommand):
                 "last_name": "Foodgram",
                 "is_staff": True,
                 "is_superuser": True,
-            }
+            },
         )
 
         if created:
@@ -97,8 +103,7 @@ class Command(BaseCommand):
 
         for tag_data in tags_data:
             tag, created = Tag.objects.get_or_create(
-                slug=tag_data["slug"],
-                defaults=tag_data
+                slug=tag_data["slug"], defaults=tag_data
             )
             status = "✅" if created else "ℹ️"
             self.stdout.write(f"{status} {tag.name}")
@@ -130,8 +135,7 @@ class Command(BaseCommand):
 
         for user_data in users_data:
             user, created = User.objects.get_or_create(
-                email=user_data["email"],
-                defaults=user_data
+                email=user_data["email"], defaults=user_data
             )
             if created:
                 user.set_password("testpass123")
@@ -160,8 +164,7 @@ class Command(BaseCommand):
 
         for name, unit in required_ingredients:
             ingredient, created = Ingredient.objects.get_or_create(
-                name=name,
-                measurement_unit=unit
+                name=name, measurement_unit=unit
             )
             status = "✅" if created else "ℹ️"
             self.stdout.write(f"{status} {name}")
@@ -183,8 +186,10 @@ class Command(BaseCommand):
         recipes_data = [
             {
                 "name": "Классические блинчики",
-                "text": ("Традиционные русские блинчики на молоке. "
-                         "Идеальный завтрак для всей семьи."),
+                "text": (
+                    "Традиционные русские блинчики на молоке. "
+                    "Идеальный завтрак для всей семьи."
+                ),
                 "cooking_time": 30,
                 "tags": ["breakfast"],
                 "ingredients": [
@@ -192,12 +197,14 @@ class Command(BaseCommand):
                     ("Молоко", 500),
                     ("Яйца куриные", 2),
                     ("Сахар", 50),
-                ]
+                ],
             },
             {
                 "name": "Борщ украинский",
-                "text": ("Наваристый борщ с говядиной и овощами. "
-                         "Классический рецепт с богатым вкусом."),
+                "text": (
+                    "Наваристый борщ с говядиной и овощами. "
+                    "Классический рецепт с богатым вкусом."
+                ),
                 "cooking_time": 120,
                 "tags": ["lunch", "healthy"],
                 "ingredients": [
@@ -206,12 +213,14 @@ class Command(BaseCommand):
                     ("Морковь", 2),
                     ("Лук репчатый", 1),
                     ("Помидоры", 2),
-                ]
+                ],
             },
             {
                 "name": "Куриные котлеты",
-                "text": ("Сочные куриные котлеты с луком. "
-                         "Прекрасное блюдо для семейного обеда."),
+                "text": (
+                    "Сочные куриные котлеты с луком. "
+                    "Прекрасное блюдо для семейного обеда."
+                ),
                 "cooking_time": 45,
                 "tags": ["lunch", "dinner"],
                 "ingredients": [
@@ -219,7 +228,7 @@ class Command(BaseCommand):
                     ("Лук репчатый", 1),
                     ("Яйца куриные", 1),
                     ("Мука пшеничная", 50),
-                ]
+                ],
             },
         ]
 
@@ -233,14 +242,13 @@ class Command(BaseCommand):
                     "text": recipe_data["text"],
                     "cooking_time": recipe_data["cooking_time"],
                     "image": self.create_recipe_image(recipe_data["name"]),
-                }
+                },
             )
 
             if created:
                 # Добавляем теги
                 recipe_tags = [
-                    tag for tag in tags
-                    if tag.slug in recipe_data["tags"]
+                    tag for tag in tags if tag.slug in recipe_data["tags"]
                 ]
                 recipe.tags.set(recipe_tags)
 
@@ -262,7 +270,7 @@ class Command(BaseCommand):
                             IngredientInRecipe.objects.create(
                                 recipe=recipe,
                                 ingredient=ingredient,
-                                amount=amount
+                                amount=amount,
                             )
                         else:
                             self.stdout.write(
@@ -282,15 +290,15 @@ class Command(BaseCommand):
                 return None
 
             # Создаем простое изображение-заглушку
-            img = Image.new('RGB', (300, 200), color='lightgray')
+            img = Image.new("RGB", (300, 200), color="lightgray")
 
             # Сохраняем в BytesIO
             img_io = BytesIO()
-            img.save(img_io, format='JPEG')
+            img.save(img_io, format="JPEG")
             img_io.seek(0)
 
             # Создаем Django File
-            safe_name = recipe_name.lower().replace(' ', '_')[:20]
+            safe_name = recipe_name.lower().replace(" ", "_")[:20]
             filename = f"recipe_{safe_name}.jpg"
             return ContentFile(img_io.getvalue(), name=filename)
         except Exception as e:
@@ -317,21 +325,17 @@ class Command(BaseCommand):
             for author in users[-1:]:
                 if user != author:
                     _, created = Subscription.objects.get_or_create(
-                        user=user,
-                        author=author
+                        user=user, author=author
                     )
                     if created:
                         interactions_count += 1
 
         # Добавляем рецепты в избранное
         for user in users:
-            favorite_recipes = random.sample(
-                recipes, min(2, len(recipes))
-            )
+            favorite_recipes = random.sample(recipes, min(2, len(recipes)))
             for recipe in favorite_recipes:
                 _, created = Favorite.objects.get_or_create(
-                    user=user,
-                    recipe=recipe
+                    user=user, recipe=recipe
                 )
                 if created:
                     interactions_count += 1

@@ -3,13 +3,19 @@ from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from foodgram.constants import (MAX_COOKING_TIME, MAX_INGREDIENT_AMOUNT,
-                                MAX_INGREDIENT_NAME_LENGTH,
-                                MAX_INGREDIENT_UNIT_LENGTH,
-                                MAX_RECIPE_NAME_LENGTH, MAX_RECIPE_TEXT_LENGTH,
-                                MAX_TAG_COLOR_LENGTH, MAX_TAG_NAME_LENGTH,
-                                MAX_TAG_SLUG_LENGTH, MIN_COOKING_TIME,
-                                MIN_INGREDIENT_AMOUNT)
+from foodgram.constants import (
+    MAX_COOKING_TIME,
+    MAX_INGREDIENT_AMOUNT,
+    MAX_INGREDIENT_NAME_LENGTH,
+    MAX_INGREDIENT_UNIT_LENGTH,
+    MAX_RECIPE_NAME_LENGTH,
+    MAX_RECIPE_TEXT_LENGTH,
+    MAX_TAG_COLOR_LENGTH,
+    MAX_TAG_NAME_LENGTH,
+    MAX_TAG_SLUG_LENGTH,
+    MIN_COOKING_TIME,
+    MIN_INGREDIENT_AMOUNT,
+)
 
 User = get_user_model()
 

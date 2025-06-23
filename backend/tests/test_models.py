@@ -5,8 +5,15 @@ from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError
 
-from apps.recipes.models import (Favorite, Ingredient, IngredientInRecipe,
-                                 Recipe, ShoppingCart, Subscription, Tag)
+from apps.recipes.models import (
+    Favorite,
+    Ingredient,
+    IngredientInRecipe,
+    Recipe,
+    ShoppingCart,
+    Subscription,
+    Tag,
+)
 from foodgram.constants import MAX_RECIPE_NAME_LENGTH
 
 User = get_user_model()
