@@ -186,8 +186,24 @@ class TestRecipeModel:
 class TestIngredientInRecipeModel:
     """Тесты модели IngredientInRecipe."""
 
-    def test_ingredient_in_recipe_creation(self, recipe, ingredient):
+    def test_ingredient_in_recipe_creation(self, user):
         """Тест создания связи ингредиента с рецептом."""
+        # Создаем новый рецепт и ингредиент для этого теста
+        recipe = Recipe.objects.create(
+            author=user,
+            name="Новый рецепт",
+            image=SimpleUploadedFile(
+                name="test.jpg",
+                content=b"fake_image_content",
+                content_type="image/jpeg",
+            ),
+            text="Описание",
+            cooking_time=30,
+        )
+        ingredient = Ingredient.objects.create(
+            name="Новый ингредиент", measurement_unit="кг"
+        )
+
         ingredient_in_recipe = IngredientInRecipe.objects.create(
             recipe=recipe, ingredient=ingredient, amount=100
         )
@@ -196,8 +212,24 @@ class TestIngredientInRecipeModel:
         assert ingredient_in_recipe.ingredient == ingredient
         assert ingredient_in_recipe.amount == 100
 
-    def test_ingredient_in_recipe_str_representation(self, recipe, ingredient):
+    def test_ingredient_in_recipe_str_representation(self, user):
         """Тест строкового представления ингредиента в рецепте."""
+        # Создаем новый рецепт и ингредиент для этого теста
+        recipe = Recipe.objects.create(
+            author=user,
+            name="Рецепт для теста",
+            image=SimpleUploadedFile(
+                name="test2.jpg",
+                content=b"fake_image_content",
+                content_type="image/jpeg",
+            ),
+            text="Описание",
+            cooking_time=30,
+        )
+        ingredient = Ingredient.objects.create(
+            name="Ингредиент для теста", measurement_unit="л"
+        )
+
         ingredient_in_recipe = IngredientInRecipe.objects.create(
             recipe=recipe, ingredient=ingredient, amount=100
         )
@@ -205,8 +237,24 @@ class TestIngredientInRecipeModel:
         expected = f"{ingredient.name} в {recipe.name}"
         assert str(ingredient_in_recipe) == expected
 
-    def test_ingredient_in_recipe_unique_together(self, recipe, ingredient):
+    def test_ingredient_in_recipe_unique_together(self, user):
         """Тест уникальности связи рецепт-ингредиент."""
+        # Создаем новый рецепт и ингредиент для этого теста
+        recipe = Recipe.objects.create(
+            author=user,
+            name="Рецепт для уникальности",
+            image=SimpleUploadedFile(
+                name="test3.jpg",
+                content=b"fake_image_content",
+                content_type="image/jpeg",
+            ),
+            text="Описание",
+            cooking_time=30,
+        )
+        ingredient = Ingredient.objects.create(
+            name="Ингредиент для уникальности", measurement_unit="шт"
+        )
+
         IngredientInRecipe.objects.create(
             recipe=recipe, ingredient=ingredient, amount=100
         )

@@ -171,7 +171,7 @@ class TestIngredientFilter:
     def test_filter_by_name(self, ingredient):
         """Тест фильтрации ингредиентов по имени."""
         filter_instance = IngredientFilter(
-            data={"name": "Мол"},  # Начинается с "Мол" для "Молоко"
+            data={"name": "Мук"},  # Начинается с "Мук" для "Мука"
             queryset=Ingredient.objects.all(),
         )
 

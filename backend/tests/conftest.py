@@ -1,5 +1,12 @@
 """Конфигурация тестов для Foodgram."""
 import base64
+import os
+
+# Настройка Django перед импортом моделей
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'foodgram.settings.development')
+
+import django
+django.setup()
 
 import pytest
 from django.contrib.auth import get_user_model
