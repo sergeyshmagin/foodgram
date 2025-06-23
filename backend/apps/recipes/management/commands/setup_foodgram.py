@@ -4,8 +4,7 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from apps.recipes.models import (Ingredient, IngredientInRecipe, Recipe, Tag,
-                                 Favorite, ShoppingCart, Subscription)
+from apps.recipes.models import Ingredient, Recipe, Tag
 
 User = get_user_model()
 
@@ -18,7 +17,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             "--clear",
-            action="store_true", 
+            action="store_true",
             help="Очистить все данные"
         )
 
@@ -49,7 +48,7 @@ class Command(BaseCommand):
     def create_admin(self):
         """Создание администратора."""
         self.stdout.write("👤 Создание администратора...")
-        
+
         admin, created = User.objects.get_or_create(
             email="admin@foodgram.ru",
             defaults={
@@ -60,7 +59,7 @@ class Command(BaseCommand):
                 "is_superuser": True,
             }
         )
-        
+
         if created:
             admin.set_password("admin123")
             admin.save()
@@ -71,7 +70,7 @@ class Command(BaseCommand):
     def create_tags(self):
         """Создание тегов."""
         self.stdout.write("🏷️ Создание тегов...")
-        
+
         tags_data = [
             {"name": "Завтрак", "color": "#E26C2D", "slug": "breakfast"},
             {"name": "Обед", "color": "#49B64E", "slug": "lunch"},
@@ -89,18 +88,18 @@ class Command(BaseCommand):
     def create_users(self):
         """Создание пользователей."""
         self.stdout.write("👥 Создание пользователей...")
-        
+
         users_data = [
             {
                 "email": "chef@foodgram.ru",
-                "username": "chef_master", 
+                "username": "chef_master",
                 "first_name": "Шеф",
                 "last_name": "Поваров",
             },
             {
                 "email": "test@foodgram.ru",
                 "username": "testuser",
-                "first_name": "Тест", 
+                "first_name": "Тест",
                 "last_name": "Пользователь",
             },
         ]
@@ -118,25 +117,27 @@ class Command(BaseCommand):
     def create_ingredients(self):
         """Создание ингредиентов."""
         self.stdout.write("🥕 Создание ингредиентов...")
-        
+
         ingredients = [
             ("Мука", "г"), ("Сахар", "г"), ("Яйца", "шт"),
             ("Молоко", "мл"), ("Масло", "г"), ("Соль", "г")
         ]
-        
+
         for name, unit in ingredients:
-            Ingredient.objects.get_or_create(name=name, measurement_unit=unit)
+            Ingredient.objects.get_or_create(
+                name=name, measurement_unit=unit
+            )
 
     def create_recipes(self):
         """Создание рецептов."""
         self.stdout.write("🍳 Создание рецептов...")
-        
+
         users = User.objects.filter(is_superuser=False)
         tags = Tag.objects.all()
-        
+
         if not users.exists():
             return
-            
+
         recipes_data = [
             {
                 "name": "Блинчики",
@@ -151,10 +152,10 @@ class Command(BaseCommand):
                 "tag_slug": "lunch"
             }
         ]
-        
+
         for recipe_data in recipes_data:
             author = random.choice(list(users))
-            
+
             recipe, created = Recipe.objects.get_or_create(
                 name=recipe_data["name"],
                 defaults={
@@ -163,13 +164,13 @@ class Command(BaseCommand):
                     "cooking_time": recipe_data["cooking_time"],
                 }
             )
-            
+
             if created:
                 # Добавляем тег
                 tag = tags.filter(slug=recipe_data["tag_slug"]).first()
                 if tag:
                     recipe.tags.add(tag)
-                
+
                 self.stdout.write(f"✅ {recipe.name}")
 
     def print_summary(self):
@@ -179,7 +180,7 @@ class Command(BaseCommand):
         self.stdout.write(f"🏷️ Теги: {Tag.objects.count()}")
         self.stdout.write(f"🥕 Ингредиенты: {Ingredient.objects.count()}")
         self.stdout.write(f"🍳 Рецепты: {Recipe.objects.count()}")
-        
+
         self.stdout.write("\n🔑 Доступ:")
         self.stdout.write("Админ: admin@foodgram.ru / admin123")
         self.stdout.write("Тест: test@foodgram.ru / testpass123") 

@@ -13,6 +13,9 @@ sudo docker compose -f infra/docker-compose.yml exec backend python manage.py lo
 echo "👤 Создание администратора и тестовых данных..."
 sudo docker compose -f infra/docker-compose.yml exec backend python manage.py setup_foodgram
 
+echo "🍳 Загрузка демонстрационных данных..."
+sudo docker compose -f infra/docker-compose.yml exec backend python manage.py load_demo_data
+
 echo "🏗️ Настройка MinIO..."
 sudo docker compose -f infra/docker-compose.yml exec backend python manage.py setup_minio
 
