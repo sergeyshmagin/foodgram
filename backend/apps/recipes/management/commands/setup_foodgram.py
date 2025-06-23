@@ -3,6 +3,7 @@ import random
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.conf import settings
 
 from apps.recipes.models import Ingredient, Recipe, Tag
 
@@ -34,6 +35,7 @@ class Command(BaseCommand):
             self.create_tags()
             self.create_users()
             self.create_ingredients()
+            self.setup_minio()
             self.create_recipes()
 
         self.print_summary()
@@ -127,6 +129,54 @@ class Command(BaseCommand):
             Ingredient.objects.get_or_create(
                 name=name, measurement_unit=unit
             )
+
+    def setup_minio(self):
+        """Настройка MinIO bucket."""
+        self.stdout.write("🗂️ Настройка MinIO...")
+        
+        try:
+            import boto3
+            from botocore.exceptions import ClientError
+            
+            # Получаем настройки из settings
+            minio_config = getattr(settings, 'AWS_S3_ENDPOINT_URL', None)
+            access_key = getattr(settings, 'AWS_ACCESS_KEY_ID', None)
+            secret_key = getattr(settings, 'AWS_SECRET_ACCESS_KEY', None)
+            bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', 'foodgram-static')
+            
+            if not all([minio_config, access_key, secret_key]):
+                self.stdout.write("⚠️ MinIO настройки не найдены, пропускаем")
+                return
+            
+            # Создаем клиент S3 для MinIO
+            s3_client = boto3.client(
+                's3',
+                endpoint_url=minio_config,
+                aws_access_key_id=access_key,
+                aws_secret_access_key=secret_key,
+                region_name='us-east-1'
+            )
+            
+            # Проверяем существует ли bucket
+            try:
+                s3_client.head_bucket(Bucket=bucket_name)
+                self.stdout.write(f"✅ Bucket {bucket_name} уже существует")
+            except ClientError as e:
+                error_code = e.response['Error']['Code']
+                if error_code == '404':
+                    # Bucket не существует, создаем его
+                    try:
+                        s3_client.create_bucket(Bucket=bucket_name)
+                        self.stdout.write(f"✅ Bucket {bucket_name} создан")
+                    except ClientError as create_error:
+                        self.stdout.write(f"❌ Ошибка создания bucket: {create_error}")
+                else:
+                    self.stdout.write(f"❌ Ошибка проверки bucket: {e}")
+                    
+        except ImportError:
+            self.stdout.write("⚠️ boto3 не установлен, пропускаем настройку MinIO")
+        except Exception as e:
+            self.stdout.write(f"⚠️ Ошибка настройки MinIO: {e}")
 
     def create_recipes(self):
         """Создание рецептов."""

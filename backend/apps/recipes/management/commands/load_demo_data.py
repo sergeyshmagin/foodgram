@@ -258,21 +258,25 @@ class Command(BaseCommand):
 
     def create_recipe_image(self, recipe_name):
         """Создает простое изображение для рецепта."""
-        if Image is None:
+        try:
+            if Image is None:
+                return None
+
+            # Создаем простое изображение-заглушку
+            img = Image.new('RGB', (300, 200), color='lightgray')
+
+            # Сохраняем в BytesIO
+            img_io = BytesIO()
+            img.save(img_io, format='JPEG')
+            img_io.seek(0)
+
+            # Создаем Django File
+            safe_name = recipe_name.lower().replace(' ', '_')[:20]
+            filename = f"recipe_{safe_name}.jpg"
+            return ContentFile(img_io.getvalue(), name=filename)
+        except Exception as e:
+            self.stdout.write(f"⚠️ Ошибка создания изображения для {recipe_name}: {e}")
             return None
-
-        # Создаем простое изображение-заглушку
-        img = Image.new('RGB', (300, 200), color='lightgray')
-
-        # Сохраняем в BytesIO
-        img_io = BytesIO()
-        img.save(img_io, format='JPEG')
-        img_io.seek(0)
-
-        # Создаем Django File
-        safe_name = recipe_name.lower().replace(' ', '_')[:20]
-        filename = f"recipe_{safe_name}.jpg"
-        return ContentFile(img_io.getvalue(), name=filename)
 
     def create_interactions(self):
         """Создает взаимодействия: подписки, избранное."""
