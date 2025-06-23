@@ -80,8 +80,10 @@ class CustomUserAdmin(BaseUserAdmin):
         """Предварительный просмотр аватара."""
         if obj.avatar:
             return mark_safe(
-                f'<img src="{obj.avatar.url}" width="{IMAGE_PREVIEW_SIZE//2}" '
-                f'height="{IMAGE_PREVIEW_SIZE//2}" style="border-radius: 50%;" />'
+                f'<img src="{obj.avatar.url}" '
+                f'width="{IMAGE_PREVIEW_SIZE//2}" '
+                f'height="{IMAGE_PREVIEW_SIZE//2}" '
+                f'style="border-radius: 50%;" />'
             )
         return "—"
 

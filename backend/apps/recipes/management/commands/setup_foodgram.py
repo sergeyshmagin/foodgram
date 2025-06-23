@@ -129,7 +129,8 @@ class Command(BaseCommand):
 
             if not os.path.exists(ingredients_file):
                 self.stdout.write(
-                    "⚠️ Файл ingredients.json не найден, создаем базовые ингредиенты"
+                    "⚠️ Файл ingredients.json не найден, "
+                    "создаем базовые ингредиенты"
                 )
                 self._create_basic_ingredients()
                 return

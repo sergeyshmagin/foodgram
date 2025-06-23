@@ -187,6 +187,7 @@ dist/
 
 # Archive folder (development files)
 archive/
+*archive*
 
 secrets*
 *.env

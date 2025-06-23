@@ -32,7 +32,10 @@ class TimeStampedModel(models.Model):
 
 
 class UserActionModel(TimeStampedModel):
-    """Абстрактная модель для действий пользователей (избранное, корзина, подписки)."""
+    """Абстрактная модель для действий пользователей.
+
+    Используется для избранного, корзины покупок и подписок.
+    """
 
     user = models.ForeignKey(
         User,
