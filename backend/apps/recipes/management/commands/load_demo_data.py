@@ -325,4 +325,4 @@ class Command(BaseCommand):
 
         self.stdout.write("\n🔑 Доступ:")
         self.stdout.write("👨‍💻 Админ: admin@foodgram.ru / admin123")
-        self.stdout.write("👤 Тест: test@foodgram.ru / testpass123") 
+        self.stdout.write("👤 Тест: test@foodgram.ru / testpass123")
