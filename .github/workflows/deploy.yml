@@ -70,7 +70,19 @@ jobs:
             git reset --hard origin/main
           else
             echo "Клонируем репозиторий..."
-            git clone https://github.com/${{ github.repository }}.git .
+            # Сначала попробуем публичный доступ
+            git clone https://github.com/${{ github.repository }}.git . || {
+              echo "Не удалось клонировать через HTTPS, пробуем другой способ..."
+              # Очищаем директорию и пробуем снова
+              rm -rf .git
+              # Используем wget для загрузки архива
+              wget -O repo.zip https://github.com/${{ github.repository }}/archive/refs/heads/main.zip
+              unzip -o repo.zip
+              mv *-main/* .
+              mv *-main/.* . 2>/dev/null || true
+              rm -rf *-main repo.zip
+              echo "Репозиторий загружен через архив"
+            }
           fi
           
           echo "Создание .env файла..."
@@ -109,7 +121,7 @@ jobs:
           EOF
           
           echo "Проверка Docker..."
-          docker --version || echo "Docker не установлен "
+          docker --version || echo "Docker не установлен"
           docker-compose --version || echo "Docker Compose не установлен"
           
           echo "Остановка старых контейнеров..."
