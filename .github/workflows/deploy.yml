@@ -109,7 +109,7 @@ jobs:
           EOF
           
           echo "Проверка Docker..."
-          docker --version || echo "Docker не установлен"
+          docker --version || echo "Docker не установлен "
           docker-compose --version || echo "Docker Compose не установлен"
           
           echo "Остановка старых контейнеров..."
