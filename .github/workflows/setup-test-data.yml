@@ -2,6 +2,11 @@ name: Setup Test Data
 
 on:
   workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "yes" to confirm test data loading'
+        required: true
+        default: 'no'
 
 env:
   PROD_HOST: 89.169.174.76
@@ -10,52 +15,36 @@ jobs:
   setup-test-data:
     name: Load test data to production
     runs-on: ubuntu-latest
+    if: github.event.inputs.confirm == 'yes'
     
     steps:
     - name: Setup test data on production server
-      uses: appleboy/ssh-action@v0.1.7
+      uses: appleboy/ssh-action@v1.0.3
       with:
-        host: ${{ env.PROD_HOST }}
+        host: ${{ secrets.PROD_HOST }}
         username: ${{ secrets.PROD_USER }}
         key: ${{ secrets.PROD_SSH_KEY }}
-        debug: true
         script: |
           set -e
+          echo "=== ЗАГРУЗКА ТЕСТОВЫХ ДАННЫХ ==="
           
-          echo "🚀 ЗАГРУЗКА ТЕСТОВЫХ ДАННЫХ FOODGRAM"
+          cd $HOME/foodgram
           
-          # Переходим в рабочую директорию
-          cd ~/foodgram
+          echo "Проверяем состояние контейнеров..."
+          sudo docker compose -f infra/docker-compose.yml ps
           
-          echo "📦 Загрузка ингредиентов..."
-          sudo docker compose -f infra/docker-compose.yml exec -T backend python manage.py load_ingredients || echo "Ингредиенты уже загружены"
-          
-          echo "👤 Создание администратора и тестовых данных..."
+          echo "Загружаем базовые данные (админ, пользователи, теги, ингредиенты)..."
           sudo docker compose -f infra/docker-compose.yml exec -T backend python manage.py setup_foodgram
           
-          echo "🍳 Загрузка демонстрационных данных..."
+          echo "Загружаем демо-данные (рецепты, изображения, взаимодействия)..."
           sudo docker compose -f infra/docker-compose.yml exec -T backend python manage.py load_demo_data
           
-          echo "🏗️ Настройка MinIO..."
-          sudo docker compose -f infra/docker-compose.yml exec -T backend python manage.py setup_minio || echo "MinIO уже настроен"
-          
-          echo "📊 Проверка статуса..."
-          sudo docker compose -f infra/docker-compose.yml exec -T backend python manage.py shell -c "
-          from django.contrib.auth import get_user_model
-          from apps.recipes.models import Recipe, Tag, Ingredient
-          User = get_user_model()
-          print(f'👤 Пользователи: {User.objects.count()}')
-          print(f'🍳 Рецепты: {Recipe.objects.count()}')
-          print(f'🏷️ Теги: {Tag.objects.count()}')
-          print(f'🥕 Ингредиенты: {Ingredient.objects.count()}')
-          "
-          
-          echo ""
           echo "✅ ТЕСТОВЫЕ ДАННЫЕ ЗАГРУЖЕНЫ!"
           echo ""
-          echo "🔑 УЧЕТНЫЕ ДАННЫЕ:"
-          echo "👨‍💻 Администратор: admin@foodgram.ru / admin123"
-          echo "👤 Тестовый пользователь: test@foodgram.ru / testpass123"
+          echo "📋 АККАУНТЫ ДЛЯ ВХОДА:"
+          echo "👤 Администратор: admin@foodgram.ru / admin123"
+          echo "👤 Шеф-повар: chef@foodgram.ru / testpass123"  
+          echo "👤 Мария: maria@foodgram.ru / testpass123"
+          echo "👤 Тестовый: test@foodgram.ru / testpass123"
           echo ""
-          echo "🌐 Сайт: https://foodgram.freedynamicdns.net"
-          echo "🔧 Админка: https://foodgram.freedynamicdns.net/admin/" 
+          echo "🌐 Admin панель: https://foodgram.freedynamicdns.net/admin/" 
