@@ -176,10 +176,10 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
     """Сериализатор для создания и обновления рецептов."""
 
     tags = serializers.PrimaryKeyRelatedField(
-        queryset=Tag.objects.all(), many=True
+        queryset=Tag.objects.all(), many=True, required=True
     )
-    ingredients = serializers.ListField(write_only=True)
-    image = Base64ImageField()
+    ingredients = serializers.ListField(write_only=True, required=True)
+    image = Base64ImageField(required=True)
     cooking_time = serializers.IntegerField(
         min_value=MIN_COOKING_TIME, max_value=MAX_COOKING_TIME
     )

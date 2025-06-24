@@ -13,7 +13,7 @@ if [ -d "venv" ]; then
 fi
 
 # Очищаем пользователей с пустыми полями
-python manage.py shell << 'EOF'
+python3 manage.py shell << 'EOF'
 from django.contrib.auth import get_user_model
 from django.db import models
 
