@@ -103,7 +103,8 @@ class Command(BaseCommand):
                 ).first()
                 if existing_by_name:
                     self.stdout.write(
-                        f"ℹ️ Тег с именем '{tag_data['name']}' уже существует со slug '{existing_by_name.slug}'"
+                        f"ℹ️ Тег с именем '{tag_data['name']}' "
+                        f"уже существует со slug '{existing_by_name.slug}'"
                     )
                     continue
 
@@ -113,7 +114,8 @@ class Command(BaseCommand):
                 ).first()
                 if existing_by_color:
                     self.stdout.write(
-                        f"ℹ️ Тег с цветом '{tag_data['color']}' уже существует: {existing_by_color.name}"
+                        f"ℹ️ Тег с цветом '{tag_data['color']}' "
+                        f"уже существует: {existing_by_color.name}"
                     )
                     continue
 

@@ -90,7 +90,8 @@ class Command(BaseCommand):
         existing_admin = User.objects.filter(is_superuser=True).first()
         if existing_admin:
             self.stdout.write(
-                f"ℹ️ Найден существующий администратор: {existing_admin.username}"
+                f"ℹ️ Найден существующий администратор: "
+                f"{existing_admin.username}"
             )
             return
 
@@ -113,7 +114,8 @@ class Command(BaseCommand):
             admin = User.objects.filter(is_superuser=True).first()
             if admin:
                 self.stdout.write(
-                    f"ℹ️ Используем существующего администратора: {admin.username}"
+                    f"ℹ️ Используем существующего администратора: "
+                    f"{admin.username}"
                 )
 
     def create_tags(self):
