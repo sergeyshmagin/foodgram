@@ -1,5 +1,6 @@
 """Development settings for Foodgram project."""
 import os
+import sys
 
 from .base import *  # noqa: F403, F401
 
@@ -95,7 +96,12 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 # MinIO configuration for development
-USE_MINIO = os.environ.get("USE_MINIO", "True") == "True"
+# По умолчанию False для тестов в CI, можно включить локально
+USE_MINIO = os.environ.get("USE_MINIO", "False") == "True"
+
+# Отключаем MinIO при запуске тестов
+if "pytest" in sys.modules or "test" in sys.argv:
+    USE_MINIO = False
 
 if USE_MINIO:
     # MinIO настройки для разработки
