@@ -277,4 +277,6 @@ jobs:
             
             # Очистка
             rm -f /tmp/mc /tmp/cors.json
-          fi 
+          fi
+          
+          echo "=== ДЕПЛОЙ ЗАВЕРШЕН УСПЕШНО ==="

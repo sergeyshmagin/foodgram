@@ -93,3 +93,40 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
 ]
+
+# MinIO configuration for development
+USE_MINIO = os.environ.get("USE_MINIO", "True") == "True"
+
+if USE_MINIO:
+    # MinIO настройки для разработки
+    MINIO_ENDPOINT = f"{os.environ.get('MINIO_HOST', 'localhost')}:9000"
+    MINIO_ACCESS_KEY = os.environ.get("MINIO_ACCESS_KEY", "minio_access_key")
+    MINIO_SECRET_KEY = os.environ.get(
+        "MINIO_SECRET_KEY", "minio_secret_key_123"
+    )
+    MINIO_BUCKET_NAME = os.environ.get("MINIO_BUCKET_NAME", "foodgram")
+    MINIO_USE_HTTPS = os.environ.get("MINIO_USE_HTTPS", "False") == "True"
+
+    # AWS S3 settings for MinIO
+    AWS_ACCESS_KEY_ID = MINIO_ACCESS_KEY
+    AWS_SECRET_ACCESS_KEY = MINIO_SECRET_KEY
+    AWS_STORAGE_BUCKET_NAME = MINIO_BUCKET_NAME
+    AWS_S3_ENDPOINT_URL = f"http://{MINIO_ENDPOINT}"
+    AWS_S3_USE_SSL = MINIO_USE_HTTPS
+    AWS_DEFAULT_ACL = None
+    AWS_S3_OBJECT_PARAMETERS = {
+        "CacheControl": "max-age=86400",
+    }
+    AWS_LOCATION = "media"
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_QUERYSTRING_AUTH = False
+
+    # File storage settings
+    DEFAULT_FILE_STORAGE = "foodgram.storage.MinIOMediaStorage"
+
+    # ВАЖНО: MEDIA_URL для разработки (доступ через localhost:9000)
+    MEDIA_URL = f"http://{MINIO_ENDPOINT}/foodgram/media/"
+else:
+    # Стандартное файловое хранилище для разработки
+    DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
+    MEDIA_URL = "/media/"

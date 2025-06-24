@@ -57,8 +57,9 @@ MINIO_USE_HTTPS = os.environ.get("MINIO_USE_HTTPS", "False") == "True"
 AWS_ACCESS_KEY_ID = MINIO_ACCESS_KEY
 AWS_SECRET_ACCESS_KEY = MINIO_SECRET_KEY
 AWS_STORAGE_BUCKET_NAME = MINIO_BUCKET_NAME
+# Возвращаем endpoint для загрузки файлов (внутренний адрес)
 AWS_S3_ENDPOINT_URL = f"http://{MINIO_ENDPOINT}"
-AWS_S3_USE_SSL = MINIO_USE_HTTPS
+AWS_S3_USE_SSL = False  # Внутри контейнера используем HTTP
 AWS_DEFAULT_ACL = None
 AWS_S3_OBJECT_PARAMETERS = {
     "CacheControl": "max-age=86400",
@@ -66,17 +67,24 @@ AWS_S3_OBJECT_PARAMETERS = {
 AWS_LOCATION = "media"
 AWS_S3_FILE_OVERWRITE = False
 
+# Настройка кастомного домена для публичного доступа к файлам
+# Это заставит Django формировать URL через публичный домен
+# вместо внутреннего MinIO
+# AWS_S3_CUSTOM_DOMAIN = os.environ.get(
+#     "DOMAIN_NAME", "foodgram.freedynamicdns.net"
+# )
+
 # Отключаем подписи для публичного доступа к media файлам
 AWS_QUERYSTRING_AUTH = False
 
-# File storage settings
-DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+# Настройка URL prefix для медиа файлов
+AWS_S3_URL_PROTOCOL = "https:"
+
+# File storage settings - используем наше кастомное хранилище
+DEFAULT_FILE_STORAGE = "foodgram.storage.MinIOMediaStorage"
 
 # Static files
 STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
-
-# Media files URL configuration - используем nginx proxy
-MEDIA_URL = "/media/"
 
 # Security settings
 SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "False") == "True"
@@ -160,3 +168,8 @@ if REDIS_PASSWORD:
 else:
     CELERY_BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
     CELERY_RESULT_BACKEND = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
+
+MEDIA_URL = (
+    f"https://{os.environ.get('DOMAIN_NAME', 'foodgram.freedynamicdns.net')}"
+    "/media/"
+)

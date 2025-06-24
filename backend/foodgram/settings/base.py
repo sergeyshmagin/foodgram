@@ -103,7 +103,8 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-MEDIA_URL = "/media/"
+# Media files - default settings (будет переопределено в production.py)
+# MEDIA_URL = "/media/"  # Комментируем чтобы не конфликтовать с production
 MEDIA_ROOT = BASE_DIR / "media"
 
 # Default primary key field type
