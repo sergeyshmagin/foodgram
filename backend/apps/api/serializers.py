@@ -1,13 +1,6 @@
 """Serializers for Foodgram API."""
 import base64
 
-from django.contrib.auth import get_user_model
-from django.core.files.base import ContentFile
-from django.db import transaction
-from djoser.serializers import UserCreateSerializer
-from djoser.serializers import UserSerializer as DjoserUserSerializer
-from rest_framework import serializers
-
 from apps.recipes.models import (
     Favorite,
     Ingredient,
@@ -17,7 +10,13 @@ from apps.recipes.models import (
     Subscription,
     Tag,
 )
+from django.contrib.auth import get_user_model
+from django.core.files.base import ContentFile
+from django.db import transaction
+from djoser.serializers import UserCreateSerializer
+from djoser.serializers import UserSerializer as DjoserUserSerializer
 from foodgram.constants import MAX_COOKING_TIME, MIN_COOKING_TIME
+from rest_framework import serializers
 
 User = get_user_model()
 

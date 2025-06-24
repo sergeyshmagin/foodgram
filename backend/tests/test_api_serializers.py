@@ -1,7 +1,5 @@
 """Тесты сериализаторов API для Foodgram."""
 import pytest
-from django.contrib.auth import get_user_model
-
 from apps.api.serializers import (
     IngredientSerializer,
     RecipeCreateUpdateSerializer,
@@ -9,6 +7,7 @@ from apps.api.serializers import (
     TagSerializer,
     UserSerializer,
 )
+from django.contrib.auth import get_user_model
 
 User = get_user_model()
 

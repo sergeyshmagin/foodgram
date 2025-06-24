@@ -1,16 +1,4 @@
 """Views for Foodgram API."""
-from django.contrib.auth import get_user_model
-from django.db.models import Sum
-from django.http import HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, redirect
-from django_filters.rest_framework import DjangoFilterBackend
-from django.contrib.auth import update_session_auth_hash
-from djoser.views import UserViewSet as DjoserUserViewSet
-from rest_framework import status, viewsets
-from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
-
 from apps.recipes.models import (
     Favorite,
     Ingredient,
@@ -20,6 +8,16 @@ from apps.recipes.models import (
     Subscription,
     Tag,
 )
+from django.contrib.auth import get_user_model, update_session_auth_hash
+from django.db.models import Sum
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect
+from django_filters.rest_framework import DjangoFilterBackend
+from djoser.views import UserViewSet as DjoserUserViewSet
+from rest_framework import status, viewsets
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
 
 from .filters import IngredientFilter, RecipeFilter
 from .permissions import IsAuthorOrReadOnly
@@ -190,8 +188,7 @@ class UserViewSet(DjoserUserViewSet):
         update_session_auth_hash(request, user)
 
         return Response(
-            {"detail": "Пароль успешно изменен"},
-            status=status.HTTP_200_OK
+            {"detail": "Пароль успешно изменен"}, status=status.HTTP_200_OK
         )
 
     @action(

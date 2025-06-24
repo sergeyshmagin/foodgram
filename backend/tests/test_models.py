@@ -1,10 +1,5 @@
 """Тесты моделей для Foodgram."""
 import pytest
-from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.db import IntegrityError
-
 from apps.recipes.models import (
     Favorite,
     Ingredient,
@@ -14,6 +9,10 @@ from apps.recipes.models import (
     Subscription,
     Tag,
 )
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import IntegrityError
 from foodgram.constants import MAX_RECIPE_NAME_LENGTH
 
 User = get_user_model()

@@ -1,8 +1,7 @@
 """Тесты разрешений API для Foodgram."""
 import pytest
-from rest_framework.test import APIRequestFactory
-
 from apps.api.permissions import IsAuthorOrReadOnly
+from rest_framework.test import APIRequestFactory
 
 
 @pytest.mark.django_db

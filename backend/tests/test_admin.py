@@ -1,13 +1,12 @@
 """Тесты админки Django для Foodgram."""
 import pytest
+from apps.recipes.admin import IngredientAdmin, RecipeAdmin, TagAdmin
+from apps.recipes.models import Ingredient, Recipe, Tag
+from apps.users.admin import CustomUserAdmin
 from django.contrib import admin
 from django.contrib.admin.sites import AdminSite
 from django.contrib.auth import get_user_model
 from django.test import RequestFactory
-
-from apps.recipes.admin import IngredientAdmin, RecipeAdmin, TagAdmin
-from apps.recipes.models import Ingredient, Recipe, Tag
-from apps.users.admin import CustomUserAdmin
 
 User = get_user_model()
 
@@ -53,9 +52,8 @@ class TestRecipeAdmin:
         Favorite.objects.create(user=user, recipe=recipe)
 
         # Получаем рецепт с аннотацией как в админке
-        from django.db.models import Count
-
         from apps.recipes.models import Recipe
+        from django.db.models import Count
 
         recipe_with_annotation = Recipe.objects.annotate(
             favorites_count_annotated=Count("favorited_by")

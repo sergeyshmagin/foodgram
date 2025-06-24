@@ -2,7 +2,6 @@
 from django.contrib import admin
 from django.db.models import Count
 from django.utils.safestring import mark_safe
-
 from foodgram.constants import (
     ADMIN_LIST_PER_PAGE,
     ADMIN_LIST_PER_PAGE_LARGE,

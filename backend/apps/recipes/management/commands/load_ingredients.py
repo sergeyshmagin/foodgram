@@ -2,10 +2,9 @@
 import csv
 import os
 
+from apps.recipes.models import Ingredient
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-
-from apps.recipes.models import Ingredient
 
 
 class Command(BaseCommand):

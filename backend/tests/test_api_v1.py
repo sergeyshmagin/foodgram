@@ -1,10 +1,9 @@
 """Тесты API для Foodgram."""
 import pytest
-from django.contrib.auth import get_user_model
-from rest_framework import status
-
 from apps.recipes.models import Favorite, Recipe, ShoppingCart
+from django.contrib.auth import get_user_model
 from foodgram.constants import MAX_COOKING_TIME, MIN_COOKING_TIME
+from rest_framework import status
 
 User = get_user_model()
 

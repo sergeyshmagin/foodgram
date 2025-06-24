@@ -1,10 +1,9 @@
 """Тесты фильтров API для Foodgram."""
 import pytest
-from django.contrib.auth import get_user_model
-from rest_framework.test import APIRequestFactory
-
 from apps.api.filters import IngredientFilter, RecipeFilter
 from apps.recipes.models import Favorite, Ingredient, Recipe, ShoppingCart
+from django.contrib.auth import get_user_model
+from rest_framework.test import APIRequestFactory
 
 User = get_user_model()
 

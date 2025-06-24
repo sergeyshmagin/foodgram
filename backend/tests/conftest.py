@@ -4,12 +4,11 @@ import os
 
 import django
 import pytest
+from apps.recipes.models import Ingredient, Recipe, Tag
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
-
-from apps.recipes.models import Ingredient, Recipe, Tag
 
 # Настройка Django перед импортом моделей
 os.environ.setdefault(
