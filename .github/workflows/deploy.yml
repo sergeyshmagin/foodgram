@@ -243,26 +243,11 @@ jobs:
             # Настраиваем публичную политику для медиа
             echo "🔒 Настройка публичной политики..."
             /tmp/mc anonymous set public local/foodgram/media/
-            # Настраиваем CORS
-            echo "🌐 Настройка CORS..."
-            cat > /tmp/cors.json << 'CORS_EOF'
-            {
-              "CORSRules": [
-                {
-                  "AllowedOrigins": ["*"],
-                  "AllowedMethods": ["GET", "HEAD"],
-                  "AllowedHeaders": ["*"],
-                  "MaxAgeSeconds": 3600
-                }
-              ]
-            }
-            CORS_EOF
-            /tmp/mc cors set /tmp/cors.json local/foodgram
             echo "✅ MinIO настроен успешно!"
             echo "📊 Содержимое bucket:"
             /tmp/mc ls local/foodgram --recursive | head -5 || echo "Bucket пуст"
             # Очистка
-            rm -f /tmp/mc /tmp/cors.json
+            rm -f /tmp/mc
           fi
           
           echo "=== ДЕПЛОЙ ЗАВЕРШЕН УСПЕШНО ==="
