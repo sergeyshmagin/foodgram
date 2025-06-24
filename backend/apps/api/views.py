@@ -68,6 +68,15 @@ class UserViewSet(DjoserUserViewSet):
         context["api_version"] = getattr(self.request, "version", "v1")
         return context
 
+    def get_permissions(self):
+        """Получить разрешения для действия."""
+        if self.action in ["list", "retrieve"]:
+            permission_classes = [AllowAny]
+        else:
+            permission_classes = [IsAuthenticated]
+
+        return [permission() for permission in permission_classes]
+
     @action(
         detail=False, methods=["get"], permission_classes=[IsAuthenticated]
     )
@@ -187,9 +196,7 @@ class UserViewSet(DjoserUserViewSet):
         # Обновляем сессию, чтобы пользователь не был автоматически разлогинен
         update_session_auth_hash(request, user)
 
-        return Response(
-            {"detail": "Пароль успешно изменен"}, status=status.HTTP_200_OK
-        )
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
         detail=False,

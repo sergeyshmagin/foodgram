@@ -122,7 +122,7 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ],
     "DEFAULT_PAGINATION_CLASS": (
-        "rest_framework.pagination.PageNumberPagination"
+        "apps.api.pagination.CustomPageNumberPagination"
     ),
     "PAGE_SIZE": 6,
     "DEFAULT_FILTER_BACKENDS": [
