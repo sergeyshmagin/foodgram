@@ -1,0 +1,23 @@
+[flake8]
+max-line-length = 79
+exclude = 
+    venv,
+    .venv,
+    migrations,
+    __pycache__,
+    .git,
+    .pytest_cache,
+    htmlcov,
+    node_modules,
+    static,
+    media
+ignore = 
+    # W503: line break before binary operator (conflicts with black)
+    W503,
+    # E203: whitespace before ':' (conflicts with black)
+    E203
+per-file-ignores =
+    # Allow unused imports in __init__.py files
+    __init__.py:F401
+    # Allow long lines in settings files
+    */settings/*.py:E501 

@@ -80,8 +80,8 @@ DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 # Static files
 STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 
-# Media files URL configuration - точка доступа к файлам
-MEDIA_URL = f"http://{MINIO_PUBLIC_ENDPOINT}/{MINIO_BUCKET_NAME}/media/"
+# Media files URL configuration - через nginx proxy
+MEDIA_URL = "/media/"
 
 # Security settings
 SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "False") == "True"
