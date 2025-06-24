@@ -54,7 +54,9 @@ MINIO_BUCKET_NAME = os.environ.get("MINIO_BUCKET_NAME", "foodgram")
 MINIO_USE_HTTPS = os.environ.get("MINIO_USE_HTTPS", "False") == "True"
 
 # Public MinIO endpoint for file access
-MINIO_PUBLIC_ENDPOINT = os.environ.get("MINIO_PUBLIC_ENDPOINT", "89.169.174.76:9000")
+MINIO_PUBLIC_ENDPOINT = os.environ.get(
+    "MINIO_PUBLIC_ENDPOINT", "89.169.174.76:9000"
+)
 
 # AWS S3 settings for MinIO
 AWS_ACCESS_KEY_ID = MINIO_ACCESS_KEY

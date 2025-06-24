@@ -166,7 +166,6 @@ class UserViewSet(DjoserUserViewSet):
     )
     def set_password(self, request):
         """Изменить пароль пользователя."""
-        
         user = request.user
         current_password = request.data.get("current_password")
         new_password = request.data.get("new_password")
@@ -186,10 +185,10 @@ class UserViewSet(DjoserUserViewSet):
         # Устанавливаем новый пароль
         user.set_password(new_password)
         user.save()
-        
+
         # Обновляем сессию, чтобы пользователь не был автоматически разлогинен
         update_session_auth_hash(request, user)
-        
+
         return Response(
             {"detail": "Пароль успешно изменен"},
             status=status.HTTP_200_OK
