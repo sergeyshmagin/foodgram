@@ -60,8 +60,7 @@ class TestUserAPI:
 
         response = authenticated_client.post(url, data, format="json")
 
-        assert response.status_code == status.HTTP_200_OK
-        assert "Пароль успешно изменен" in str(response.data)
+        assert response.status_code == status.HTTP_204_NO_CONTENT
 
         # Проверяем, что пароль действительно изменился
         user.refresh_from_db()
@@ -87,8 +86,7 @@ class TestUserAPI:
 
         response = api_client.post(url, data, format="json")
 
-        assert response.status_code == status.HTTP_200_OK
-        assert "Инструкции отправлены на email" in str(response.data)
+        assert response.status_code == status.HTTP_204_NO_CONTENT
 
     def test_reset_password_nonexistent_user(self, api_client):
         """Тест сброса пароля для несуществующего пользователя."""
@@ -99,8 +97,7 @@ class TestUserAPI:
 
         # Должен возвращать тот же ответ, чтобы не раскрывать
         # существование пользователя
-        assert response.status_code == status.HTTP_200_OK
-        assert "Инструкции отправлены на email" in str(response.data)
+        assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
 @pytest.mark.django_db

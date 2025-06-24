@@ -70,7 +70,7 @@ class UserViewSet(DjoserUserViewSet):
 
     def get_permissions(self):
         """Получить разрешения для действия."""
-        if self.action in ["list", "retrieve"]:
+        if self.action in ["list", "retrieve", "create", "reset_password"]:
             permission_classes = [AllowAny]
         else:
             permission_classes = [IsAuthenticated]
@@ -218,16 +218,10 @@ class UserViewSet(DjoserUserViewSet):
             User.objects.get(email=email)
             # В реальном проекте здесь бы отправлялось письмо
             # Пока просто возвращаем успешный ответ
-            return Response(
-                {"detail": "Инструкции отправлены на email"},
-                status=status.HTTP_200_OK,
-            )
+            return Response(status=status.HTTP_204_NO_CONTENT)
         except User.DoesNotExist:
             # Не раскрываем информацию о существовании пользователя
-            return Response(
-                {"detail": "Инструкции отправлены на email"},
-                status=status.HTTP_200_OK,
-            )
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
