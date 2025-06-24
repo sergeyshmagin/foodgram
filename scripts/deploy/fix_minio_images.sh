@@ -22,8 +22,8 @@ sudo docker compose -f infra/docker-compose.yml exec -T minio mc anonymous set p
 
 echo "🌐 Настраиваем CORS политику правильно..."
 
-# Создаем временный файл с CORS конфигурацией
-sudo docker compose -f infra/docker-compose.yml exec -T minio sh -c 'cat > /tmp/cors.json << EOF
+# Создаем CORS файл на хосте и копируем в контейнер
+cat > /tmp/minio_cors.json << 'EOF'
 {
   "CORSRules": [
     {
@@ -35,13 +35,19 @@ sudo docker compose -f infra/docker-compose.yml exec -T minio sh -c 'cat > /tmp/
     }
   ]
 }
-EOF'
+EOF
 
-# Применяем CORS конфигурацию из файла
+# Копируем файл в контейнер MinIO
+sudo docker cp /tmp/minio_cors.json foodgram-minio:/tmp/cors.json
+
+# Применяем CORS конфигурацию
 sudo docker compose -f infra/docker-compose.yml exec -T minio mc cors set /tmp/cors.json minio/foodgram
 
+# Очищаем временный файл
+rm -f /tmp/minio_cors.json
+
 echo "📋 Проверяем CORS настройки..."
-sudo docker compose -f infra/docker-compose.yml exec -T minio mc cors get minio/foodgram
+sudo docker compose -f infra/docker-compose.yml exec -T minio mc cors get minio/foodgram || echo "ℹ️ CORS настройки не отображаются, но могут быть установлены"
 
 echo "🔧 Обновляем переменные окружения с правильными настройками MinIO..."
 
@@ -81,6 +87,7 @@ print(f'MEDIA_URL: {settings.MEDIA_URL}')
 print(f'AWS_S3_ENDPOINT_URL: {settings.AWS_S3_ENDPOINT_URL}')
 print(f'AWS_STORAGE_BUCKET_NAME: {settings.AWS_STORAGE_BUCKET_NAME}')
 print(f'AWS_S3_CUSTOM_DOMAIN: {getattr(settings, \"AWS_S3_CUSTOM_DOMAIN\", \"Не установлен\")}')
+print(f'AWS_QUERYSTRING_AUTH: {getattr(settings, \"AWS_QUERYSTRING_AUTH\", \"Не установлен\")}')
 print(f'MINIO_PUBLIC_ENDPOINT: {os.environ.get(\"MINIO_PUBLIC_ENDPOINT\", \"Не установлен\")}')
 
 print('📁 Тестируем подключение к MinIO...')
@@ -119,4 +126,9 @@ echo ""
 echo "🧪 Тестирование:"
 echo "   1. Откройте сайт: https://foodgram.freedynamicdns.net"
 echo "   2. Перейдите к любому рецепту"
-echo "   3. Картинки должны отображаться корректно" 
+echo "   3. Картинки должны отображаться корректно"
+echo ""
+echo "🔧 Если картинки все еще не отображаются:"
+echo "   1. Проверьте MinIO консоль: http://89.169.174.76:9001"
+echo "   2. Убедитесь, что bucket 'foodgram' публичный"
+echo "   3. Проверьте, что файлы загружаются в папку media/" 
