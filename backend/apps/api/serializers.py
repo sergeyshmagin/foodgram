@@ -78,6 +78,22 @@ class CustomUserCreateSerializer(UserCreateSerializer):
             "password",
         )
 
+    def validate_email(self, value):
+        """Валидация email."""
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError(
+                "Пользователь с таким Email уже существует."
+            )
+        return value
+
+    def validate_username(self, value):
+        """Валидация username."""
+        if User.objects.filter(username__iexact=value).exists():
+            raise serializers.ValidationError(
+                "Пользователь с таким Имя пользователя уже существует."
+            )
+        return value
+
 
 class SetAvatarSerializer(serializers.Serializer):
     """Сериализатор для установки аватара пользователя."""
@@ -194,6 +210,32 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
             "text",
             "cooking_time",
         )
+
+    def validate(self, data):
+        """Общая валидация данных рецепта."""
+        # Проверяем обязательные поля
+        required_fields = ["tags", "ingredients", "image", "name", "text"]
+        errors = {}
+
+        for field in required_fields:
+            if field not in data or not data[field]:
+                if field == "tags":
+                    errors[field] = ["Необходимо выбрать хотя бы один тег."]
+                elif field == "ingredients":
+                    errors[field] = [
+                        "Необходимо добавить хотя бы один ингредиент."
+                    ]
+                elif field == "image":
+                    errors[field] = ["Необходимо загрузить изображение."]
+                elif field == "name":
+                    errors[field] = ["Название рецепта обязательно."]
+                elif field == "text":
+                    errors[field] = ["Описание рецепта обязательно."]
+
+        if errors:
+            raise serializers.ValidationError(errors)
+
+        return data
 
     def validate_ingredients(self, value):
         """Валидация ингредиентов."""
