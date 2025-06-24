@@ -71,6 +71,9 @@ AWS_S3_OBJECT_PARAMETERS = {
 AWS_LOCATION = "media"
 AWS_S3_FILE_OVERWRITE = False
 
+# Отключаем подписи для публичного доступа
+AWS_QUERYSTRING_AUTH = False
+
 # Custom domain for public access to files
 AWS_S3_CUSTOM_DOMAIN = MINIO_PUBLIC_ENDPOINT
 
@@ -80,8 +83,8 @@ DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 # Static files
 STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 
-# Media files URL configuration - через nginx proxy
-MEDIA_URL = "/media/"
+# Media files URL configuration - используем прямые ссылки на MinIO
+MEDIA_URL = f"http://{MINIO_PUBLIC_ENDPOINT}/foodgram/media/"
 
 # Security settings
 SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "False") == "True"
