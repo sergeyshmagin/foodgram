@@ -4,6 +4,7 @@ from django.db.models import Sum
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django_filters.rest_framework import DjangoFilterBackend
+from django.contrib.auth import update_session_auth_hash
 from djoser.views import UserViewSet as DjoserUserViewSet
 from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
@@ -165,7 +166,6 @@ class UserViewSet(DjoserUserViewSet):
     )
     def set_password(self, request):
         """Изменить пароль пользователя."""
-        from django.contrib.auth import update_session_auth_hash
         
         user = request.user
         current_password = request.data.get("current_password")

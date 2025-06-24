@@ -61,7 +61,8 @@ class TestUserAPI:
 
         response = authenticated_client.post(url, data, format="json")
 
-        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert response.status_code == status.HTTP_200_OK
+        assert "Пароль успешно изменен" in str(response.data)
 
         # Проверяем, что пароль действительно изменился
         user.refresh_from_db()
