@@ -21,7 +21,10 @@ echo "🔓 Устанавливаем публичную политику для
 sudo docker compose -f infra/docker-compose.yml exec -T minio mc anonymous set public minio/foodgram
 
 echo "🌐 Настраиваем CORS политику правильно..."
-sudo docker compose -f infra/docker-compose.yml exec -T minio mc cors set --json '{
+
+# Создаем временный файл с CORS конфигурацией
+sudo docker compose -f infra/docker-compose.yml exec -T minio sh -c 'cat > /tmp/cors.json << EOF
+{
   "CORSRules": [
     {
       "AllowedOrigins": ["*"],
@@ -31,7 +34,11 @@ sudo docker compose -f infra/docker-compose.yml exec -T minio mc cors set --json
       "MaxAgeSeconds": 3000
     }
   ]
-}' minio/foodgram
+}
+EOF'
+
+# Применяем CORS конфигурацию из файла
+sudo docker compose -f infra/docker-compose.yml exec -T minio mc cors set /tmp/cors.json minio/foodgram
 
 echo "📋 Проверяем CORS настройки..."
 sudo docker compose -f infra/docker-compose.yml exec -T minio mc cors get minio/foodgram
@@ -61,6 +68,10 @@ fi
 echo "🚀 Рестартуем backend для применения изменений..."
 sudo docker compose -f infra/docker-compose.yml restart backend
 
+# Ждем запуска backend
+echo "⏱️ Ожидаем запуск backend..."
+sleep 15
+
 echo "🔍 Проверяем настройки Django..."
 sudo docker compose -f infra/docker-compose.yml exec -T backend python manage.py shell -c "
 import os
@@ -87,10 +98,25 @@ curl -I http://89.169.174.76:9000/minio/health/live || echo "⚠️ MinIO нед
 echo "📁 Проверяем, есть ли файлы в bucket..."
 sudo docker compose -f infra/docker-compose.yml exec -T minio mc ls minio/foodgram/media/ --recursive || echo "📝 Папка media пуста или не существует"
 
+echo "🔄 Проверяем, запущен ли frontend..."
+if ! sudo docker compose -f infra/docker-compose.yml ps | grep -q frontend; then
+    echo "⚠️ Frontend контейнер не запущен. Запускаем все сервисы..."
+    sudo docker compose -f infra/docker-compose.yml up -d
+    sleep 10
+fi
+
+echo "📊 Финальная проверка всех контейнеров..."
+sudo docker compose -f infra/docker-compose.yml ps
+
 echo "🎉 Исправление настроек MinIO завершено!"
 echo ""
 echo "🔗 Доступ к файлам через:"
 echo "   MinIO API: http://89.169.174.76:9000"
 echo "   MinIO Console: http://89.169.174.76:9001"
 echo "   Логин: minio_access_key"
-echo "   Пароль: minio_secret_key_123" 
+echo "   Пароль: minio_secret_key_123"
+echo ""
+echo "🧪 Тестирование:"
+echo "   1. Откройте сайт: https://foodgram.freedynamicdns.net"
+echo "   2. Перейдите к любому рецепту"
+echo "   3. Картинки должны отображаться корректно" 
