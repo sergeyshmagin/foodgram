@@ -138,6 +138,20 @@ docker-compose -f infra/docker-compose.yml up -d --build
 
 ### Полная документация API доступна по адресу: `/api/docs/`
 
+## 🧪 Тестирование API
+
+### Postman коллекция
+Для тестирования API используйте готовую Postman коллекцию:
+
+- 📖 **Полная инструкция**: [docs/POSTMAN_TESTING.md](docs/POSTMAN_TESTING.md)
+- 🚀 **Быстрый старт**: [docs/POSTMAN_QUICKSTART.md](docs/POSTMAN_QUICKSTART.md)
+- 📋 **Коллекция**: `postman_collection/foodgram.postman_collection.json`
+
+### Быстрая настройка Postman:
+1. Импортируйте коллекцию из `postman_collection/foodgram.postman_collection.json`
+2. Измените базовый URL на `https://foodgram.freedynamicdns.net`
+3. Запустите коллекцию для автоматического тестирования всех endpoints
+
 ## Разработка
 
 ### Локальная разработка:

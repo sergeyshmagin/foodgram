@@ -210,6 +210,12 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
             if not ingredient_id:
                 raise serializers.ValidationError("ID ингредиента обязателен.")
 
+            # Проверяем существование ингредиента в базе данных
+            if not Ingredient.objects.filter(id=ingredient_id).exists():
+                raise serializers.ValidationError(
+                    f"Ингредиент с ID {ingredient_id} не существует."
+                )
+
             # Преобразуем amount в число для валидации
             try:
                 amount = int(amount) if amount else 0
@@ -279,10 +285,17 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         ingredient_recipes = []
 
         for ingredient_data in ingredients:
+            # Дополнительная проверка на случай, если валидация была пропущена
+            ingredient_id = ingredient_data["id"]
+            if not Ingredient.objects.filter(id=ingredient_id).exists():
+                raise serializers.ValidationError(
+                    f"Ингредиент с ID {ingredient_id} не существует."
+                )
+
             ingredient_recipes.append(
                 IngredientInRecipe(
                     recipe=recipe,
-                    ingredient_id=ingredient_data["id"],
+                    ingredient_id=ingredient_id,
                     amount=ingredient_data["amount"],
                 )
             )

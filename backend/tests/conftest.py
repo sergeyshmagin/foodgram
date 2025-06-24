@@ -61,6 +61,22 @@ def another_user():
 
 
 @pytest.fixture
+def subscription(user, another_user):
+    """Создает подписку между пользователями."""
+    from apps.recipes.models import Subscription
+
+    return Subscription.objects.create(user=user, author=another_user)
+
+
+@pytest.fixture
+def ingredient_in_recipe(recipe, ingredient):
+    """Создает связь ингредиента с рецептом."""
+    from apps.recipes.models import IngredientInRecipe
+
+    return IngredientInRecipe.objects.get(recipe=recipe, ingredient=ingredient)
+
+
+@pytest.fixture
 def admin_user():
     """Создает администратора."""
     return User.objects.create_superuser(
