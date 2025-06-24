@@ -30,9 +30,38 @@ class Command(BaseCommand):
         """Основная логика команды."""
         file_path = options["file"]
 
-        # Если путь относительный, строим его от корня проекта
+        # Определяем путь к файлу
         if not os.path.isabs(file_path):
-            file_path = os.path.join(settings.BASE_DIR.parent, file_path)
+            # Пробуем разные варианты пути
+            possible_paths = [
+                # Для Docker контейнера (файл монтируется в /app/data/)
+                os.path.join("/app", file_path),
+                # Для локальной разработки (от корня проекта)
+                os.path.join(settings.BASE_DIR.parent, file_path),
+                # Альтернативный путь для Docker
+                os.path.join("/data", "ingredients.csv"),
+                # Прямой путь от BASE_DIR
+                os.path.join(settings.BASE_DIR, file_path),
+            ]
+
+            # Ищем существующий файл
+            for path in possible_paths:
+                if os.path.exists(path):
+                    file_path = path
+                    break
+            else:
+                # Если файл не найден, выводим информацию для отладки
+                self.stdout.write(
+                    self.style.ERROR("Файл не найден. Проверенные пути:")
+                )
+                for path in possible_paths:
+                    self.stdout.write(f"  - {path}")
+
+                # Показываем текущую директорию и её содержимое
+                current_dir = os.getcwd()
+                self.stdout.write(f"Текущая директория: {current_dir}")
+
+                raise CommandError(f"Файл не найден: {options['file']}")
 
         if not os.path.exists(file_path):
             raise CommandError(f"Файл не найден: {file_path}")

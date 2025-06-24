@@ -86,6 +86,7 @@ services:
       - static_files:/app/staticfiles
       - logs:/app/logs
       - sent_emails:/app/sent_emails
+      - ../data:/app/data:ro
     depends_on:
       db:
         condition: service_healthy
