@@ -12,9 +12,9 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'foodgram.settings.production')
 import django
 django.setup()
 
+from django.db import models
 from django.contrib.auth import get_user_model
-from apps.recipes.models import Recipe, Favorite, ShoppingCart
-from apps.users.models import Subscription
+from apps.recipes.models import Recipe, Favorite, ShoppingCart, Subscription
 
 User = get_user_model()
 
@@ -127,10 +127,7 @@ def verify_test_users_removed():
 if __name__ == '__main__':
     print("🚀 Запуск очистки тестовых пользователей Postman...")
     
-    try:
-        # Добавляем import для models.Q
-        from django.db import models
-        
+    try:        
         print("📋 Состояние ДО очистки:")
         check_current_state()
         
