@@ -18,7 +18,7 @@ class Command(BaseCommand):
             "--file",
             type=str,
             help="Путь к CSV файлу с ингредиентами",
-            default="../../data/ingredients.csv",
+            default="data/ingredients.csv",
         )
         parser.add_argument(
             "--clear",

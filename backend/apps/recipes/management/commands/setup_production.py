@@ -74,15 +74,11 @@ class Command(BaseCommand):
         ]
 
         for tag_data in tags_data:
-            # Используем get_or_create для безопасного создания
-            tag, created = Tag.objects.get_or_create(
-                slug=tag_data["slug"], defaults=tag_data
-            )
-
-            if created:
-                self.stdout.write(f"✅ Создан тег: {tag_data['name']}")
-            else:
+            # Сначала проверяем по slug
+            try:
+                tag = Tag.objects.get(slug=tag_data["slug"])
                 self.stdout.write(f"ℹ️ Тег уже существует: {tag.name}")
+
                 # Обновляем поля если нужно
                 updated = False
                 if tag.name != tag_data["name"]:
@@ -92,5 +88,40 @@ class Command(BaseCommand):
                     tag.color = tag_data["color"]
                     updated = True
                 if updated:
-                    tag.save()
-                    self.stdout.write(f"🔄 Обновлён тег: {tag.name}")
+                    try:
+                        tag.save()
+                        self.stdout.write(f"🔄 Обновлён тег: {tag.name}")
+                    except Exception as e:
+                        self.stdout.write(
+                            f"⚠️ Не удалось обновить тег {tag.name}: {e}"
+                        )
+
+            except Tag.DoesNotExist:
+                # Проверяем по name, чтобы избежать дублирования
+                existing_by_name = Tag.objects.filter(
+                    name=tag_data["name"]
+                ).first()
+                if existing_by_name:
+                    self.stdout.write(
+                        f"ℹ️ Тег с именем '{tag_data['name']}' уже существует со slug '{existing_by_name.slug}'"
+                    )
+                    continue
+
+                # Проверяем по color
+                existing_by_color = Tag.objects.filter(
+                    color=tag_data["color"]
+                ).first()
+                if existing_by_color:
+                    self.stdout.write(
+                        f"ℹ️ Тег с цветом '{tag_data['color']}' уже существует: {existing_by_color.name}"
+                    )
+                    continue
+
+                # Если не найден ни по одному полю - создаём новый
+                try:
+                    tag = Tag.objects.create(**tag_data)
+                    self.stdout.write(f"✅ Создан тег: {tag.name}")
+                except Exception as e:
+                    self.stdout.write(
+                        f"⚠️ Не удалось создать тег '{tag_data['name']}': {e}"
+                    )

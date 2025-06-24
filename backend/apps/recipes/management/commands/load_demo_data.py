@@ -70,23 +70,51 @@ class Command(BaseCommand):
         """Создает администратора."""
         self.stdout.write("👤 Создание администратора...")
 
-        admin, created = User.objects.get_or_create(
-            email="admin@foodgram.ru",
-            defaults={
-                "username": "admin",
-                "first_name": "Администратор",
-                "last_name": "Foodgram",
-                "is_staff": True,
-                "is_superuser": True,
-            },
-        )
+        # Сначала ищем существующего администратора
+        try:
+            admin = User.objects.get(username="admin")
+            self.stdout.write("ℹ️ Администратор уже существует")
+            return
+        except User.DoesNotExist:
+            pass
 
-        if created:
+        # Ищем по email
+        try:
+            admin = User.objects.get(email="admin@foodgram.local")
+            self.stdout.write("ℹ️ Администратор найден по email")
+            return
+        except User.DoesNotExist:
+            pass
+
+        # Пытаемся найти любого суперпользователя
+        existing_admin = User.objects.filter(is_superuser=True).first()
+        if existing_admin:
+            self.stdout.write(
+                f"ℹ️ Найден существующий администратор: {existing_admin.username}"
+            )
+            return
+
+        # Создаем нового администратора
+        try:
+            admin = User.objects.create_user(
+                username="admin",
+                email="admin@foodgram.local",
+                first_name="Администратор",
+                last_name="Foodgram",
+                is_staff=True,
+                is_superuser=True,
+            )
             admin.set_password("admin123")
             admin.save()
             self.stdout.write("✅ Администратор создан")
-        else:
-            self.stdout.write("ℹ️ Администратор уже существует")
+        except Exception as e:
+            self.stdout.write(f"⚠️ Ошибка создания администратора: {e}")
+            # Используем существующего
+            admin = User.objects.filter(is_superuser=True).first()
+            if admin:
+                self.stdout.write(
+                    f"ℹ️ Используем существующего администратора: {admin.username}"
+                )
 
     def create_tags(self):
         """Создает теги."""
@@ -102,11 +130,37 @@ class Command(BaseCommand):
         ]
 
         for tag_data in tags_data:
-            tag, created = Tag.objects.get_or_create(
-                slug=tag_data["slug"], defaults=tag_data
-            )
-            status = "✅" if created else "ℹ️"
-            self.stdout.write(f"{status} {tag.name}")
+            # Проверяем существование по всем уникальным полям
+            try:
+                tag = Tag.objects.get(slug=tag_data["slug"])
+                self.stdout.write(f"ℹ️ {tag.name}")
+            except Tag.DoesNotExist:
+                # Проверяем по name и color чтобы избежать дублирования
+                existing_by_name = Tag.objects.filter(
+                    name=tag_data["name"]
+                ).first()
+                if existing_by_name:
+                    self.stdout.write(
+                        f"ℹ️ Тег '{tag_data['name']}' уже существует"
+                    )
+                    continue
+
+                existing_by_color = Tag.objects.filter(
+                    color=tag_data["color"]
+                ).first()
+                if existing_by_color:
+                    self.stdout.write(
+                        f"ℹ️ Цвет '{tag_data['color']}' уже используется"
+                    )
+                    continue
+
+                try:
+                    tag = Tag.objects.create(**tag_data)
+                    self.stdout.write(f"✅ {tag.name}")
+                except Exception as e:
+                    self.stdout.write(
+                        f"⚠️ Не удалось создать тег '{tag_data['name']}': {e}"
+                    )
 
     def create_users(self):
         """Создает тестовых пользователей."""
