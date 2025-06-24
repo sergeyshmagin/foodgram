@@ -218,7 +218,7 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     "Количество ингредиента должно быть числом."
                 )
-            
+
             if not amount or amount < 1:
                 raise serializers.ValidationError(
                     "Количество ингредиента должно быть больше 0."

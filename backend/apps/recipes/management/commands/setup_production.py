@@ -79,21 +79,28 @@ class Command(BaseCommand):
         for tag_data in tags_data:
             try:
                 # Сначала пытаемся получить тег
-                tag = Tag.objects.get(slug=tag_data["slug"])
-                self.stdout.write(f"ℹ️ Тег уже существует: {tag_data['name']}")
+                Tag.objects.get(slug=tag_data["slug"])
+                self.stdout.write(
+                    f"ℹ️ Тег уже существует: {tag_data['name']}"
+                )
             except Tag.DoesNotExist:
                 # Если тега нет, создаём новый
                 try:
-                    tag = Tag.objects.create(**tag_data)
-                    self.stdout.write(f"✅ Создан тег: {tag_data['name']}")
+                    Tag.objects.create(**tag_data)
+                    self.stdout.write(
+                        f"✅ Создан тег: {tag_data['name']}"
+                    )
                 except IntegrityError:
                     # На случай race condition - пытаемся получить ещё раз
                     try:
-                        tag = Tag.objects.get(slug=tag_data["slug"])
-                        self.stdout.write(f"ℹ️ Тег уже существует: {tag_data['name']}")
+                        Tag.objects.get(slug=tag_data["slug"])
+                        self.stdout.write(
+                            f"ℹ️ Тег уже существует: {tag_data['name']}"
+                        )
                     except Tag.DoesNotExist:
                         self.stdout.write(
                             self.style.WARNING(
-                                f"⚠️ Не удалось создать тег: {tag_data['name']}"
+                                f"⚠️ Не удалось создать тег: "
+                                f"{tag_data['name']}"
                             )
                         )
