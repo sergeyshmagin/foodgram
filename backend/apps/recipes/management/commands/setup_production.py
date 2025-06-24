@@ -2,7 +2,6 @@
 from apps.recipes.models import Tag
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
-from django.db import IntegrityError, transaction
 
 User = get_user_model()
 
@@ -18,9 +17,8 @@ class Command(BaseCommand):
             self.style.SUCCESS("🚀 Настройка базовых данных для продакшна")
         )
 
-        with transaction.atomic():
-            self._create_admin()
-            self._create_tags()
+        self._create_admin()
+        self._create_tags()
 
         self.stdout.write(
             self.style.SUCCESS("✅ Базовые данные успешно загружены!")
@@ -76,26 +74,23 @@ class Command(BaseCommand):
         ]
 
         for tag_data in tags_data:
-            try:
-                # Сначала пытаемся получить тег
-                Tag.objects.get(slug=tag_data["slug"])
-                self.stdout.write(f"ℹ️ Тег уже существует: {tag_data['name']}")
-            except Tag.DoesNotExist:
-                # Если тега нет, создаём новый
-                try:
-                    Tag.objects.create(**tag_data)
-                    self.stdout.write(f"✅ Создан тег: {tag_data['name']}")
-                except IntegrityError:
-                    # На случай race condition - пытаемся получить ещё раз
-                    try:
-                        Tag.objects.get(slug=tag_data["slug"])
-                        self.stdout.write(
-                            f"ℹ️ Тег уже существует: {tag_data['name']}"
-                        )
-                    except Tag.DoesNotExist:
-                        self.stdout.write(
-                            self.style.WARNING(
-                                f"⚠️ Не удалось создать тег: "
-                                f"{tag_data['name']}"
-                            )
-                        )
+            # Используем get_or_create для безопасного создания
+            tag, created = Tag.objects.get_or_create(
+                slug=tag_data["slug"], defaults=tag_data
+            )
+
+            if created:
+                self.stdout.write(f"✅ Создан тег: {tag_data['name']}")
+            else:
+                self.stdout.write(f"ℹ️ Тег уже существует: {tag.name}")
+                # Обновляем поля если нужно
+                updated = False
+                if tag.name != tag_data["name"]:
+                    tag.name = tag_data["name"]
+                    updated = True
+                if tag.color != tag_data["color"]:
+                    tag.color = tag_data["color"]
+                    updated = True
+                if updated:
+                    tag.save()
+                    self.stdout.write(f"🔄 Обновлён тег: {tag.name}")
