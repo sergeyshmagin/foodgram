@@ -1,72 +1,96 @@
 #!/bin/bash
 
-# Скрипт для настройки MinIO и создания bucket
+# Скрипт для настройки MinIO после деплоя
+# Создает bucket и настраивает публичную политику для изображений
 
 set -e
 
-DOMAIN="foodgram.freedynamicdns.net"
-BACKEND_URL="https://${DOMAIN}"
-FRONTEND_URL="https://${DOMAIN}"
+# Цвета для вывода
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
 
-echo "🔧 Настройка MinIO для проекта Foodgram..."
+echo -e "${YELLOW}🔧 Настройка MinIO...${NC}"
 
-cd /home/yc-user/foodgram
+# Проверяем что MinIO доступен
+MINIO_ENDPOINT="localhost:9000"
+BUCKET_NAME="foodgram"
 
-echo "📦 Проверяем статус контейнеров..."
-sudo docker compose -f infra/docker-compose.yml ps
+echo -e "${YELLOW}⏳ Ожидание запуска MinIO...${NC}"
+until curl -f http://$MINIO_ENDPOINT/minio/health/live > /dev/null 2>&1; do
+    echo "⏳ MinIO еще не готов, ожидание..."
+    sleep 5
+done
 
-echo "🔗 Настраиваем MinIO client alias..."
-sudo docker compose -f infra/docker-compose.yml exec -T minio mc alias set minio http://localhost:9000 minio_access_key minio_secret_key_123 || true
+echo -e "${GREEN}✅ MinIO запущен${NC}"
 
-echo "📁 Создаем bucket foodgram если не существует..."
-sudo docker compose -f infra/docker-compose.yml exec -T minio mc mb minio/foodgram --ignore-existing
+# Устанавливаем MinIO Client если не установлен
+if ! command -v mc &> /dev/null; then
+    echo -e "${YELLOW}📦 Установка MinIO Client...${NC}"
+    curl https://dl.min.io/client/mc/release/linux-amd64/mc -o /usr/local/bin/mc
+    chmod +x /usr/local/bin/mc
+fi
 
-echo "🔓 Устанавливаем публичную политику для bucket..."
-sudo docker compose -f infra/docker-compose.yml exec -T minio mc anonymous set public minio/foodgram
+# Настраиваем alias для MinIO
+echo -e "${YELLOW}🔑 Настройка подключения к MinIO...${NC}"
+mc alias set local http://$MINIO_ENDPOINT ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY}
 
-echo "🌐 Настраиваем CORS политику..."
-cat > /tmp/cors.json << EOF
+# Создаем bucket если не существует
+echo -e "${YELLOW}📁 Создание bucket '$BUCKET_NAME'...${NC}"
+if ! mc ls local/$BUCKET_NAME > /dev/null 2>&1; then
+    mc mb local/$BUCKET_NAME
+    echo -e "${GREEN}✅ Bucket '$BUCKET_NAME' создан${NC}"
+else
+    echo -e "${GREEN}✅ Bucket '$BUCKET_NAME' уже существует${NC}"
+fi
+
+# Создаем публичную политику для медиа файлов
+echo -e "${YELLOW}🔒 Настройка публичной политики для медиа файлов...${NC}"
+cat > /tmp/public-policy.json << EOF
 {
-  "CORSRules": [
+  "Version": "2012-10-17",
+  "Statement": [
     {
-      "AllowedOrigins": ["*"],
-      "AllowedMethods": ["GET", "POST", "PUT", "DELETE", "HEAD"],
-      "AllowedHeaders": ["*"],
-      "ExposeHeaders": ["ETag"],
-      "MaxAgeSeconds": 3000
+      "Effect": "Allow",
+      "Principal": {"AWS": "*"},
+      "Action": ["s3:GetObject"],
+      "Resource": ["arn:aws:s3:::$BUCKET_NAME/media/*"]
     }
   ]
 }
 EOF
 
-sudo docker compose -f infra/docker-compose.yml exec -T minio mc cors set /tmp/cors.json minio/foodgram || true
+# Применяем политику
+mc policy set-json /tmp/public-policy.json local/$BUCKET_NAME/media
+echo -e "${GREEN}✅ Публичная политика настроена для /media/*${NC}"
 
-echo "📋 Проверяем созданные buckets..."
-sudo docker compose -f infra/docker-compose.yml exec -T minio mc ls minio/
+# Настраиваем CORS для bucket
+echo -e "${YELLOW}🌐 Настройка CORS для bucket...${NC}"
+cat > /tmp/cors.json << EOF
+{
+  "CORSRules": [
+    {
+      "AllowedOrigins": ["*"],
+      "AllowedMethods": ["GET", "HEAD"],
+      "AllowedHeaders": ["*"],
+      "MaxAgeSeconds": 3600
+    }
+  ]
+}
+EOF
 
-echo "✅ MinIO настроен успешно!"
-echo "📄 Веб-интерфейс MinIO: http://89.169.174.76:9001"
-echo "🔑 Логин: minio_access_key"
-echo "🔐 Пароль: minio_secret_key_123"
+mc cors set /tmp/cors.json local/$BUCKET_NAME
+echo -e "${GREEN}✅ CORS настроен${NC}"
 
-echo "🔧 Обновляем настройки Django для правильного URL..."
-sudo docker compose -f infra/docker-compose.yml exec -T backend python manage.py shell -c "
-import os
-from django.conf import settings
-print('🔍 Текущие настройки MinIO:')
-print(f'MEDIA_URL: {settings.MEDIA_URL}')
-print(f'AWS_S3_ENDPOINT_URL: {settings.AWS_S3_ENDPOINT_URL}')
-print(f'AWS_STORAGE_BUCKET_NAME: {settings.AWS_STORAGE_BUCKET_NAME}')
-print('📁 Тестируем подключение к MinIO...')
-from django.core.files.storage import default_storage
-try:
-    default_storage.bucket_name
-    print('✅ Подключение к MinIO работает!')
-except Exception as e:
-    print(f'❌ Ошибка подключения к MinIO: {e}')
-"
+# Очистка временных файлов
+rm -f /tmp/public-policy.json /tmp/cors.json
 
-echo "🚀 Рестартуем backend для применения изменений..."
-sudo docker compose -f infra/docker-compose.yml restart backend
+echo -e "${GREEN}🎉 Настройка MinIO завершена!${NC}"
+echo -e "${YELLOW}📊 Статистика bucket:${NC}"
+mc ls local/$BUCKET_NAME --recursive | head -10
 
-echo "🎉 Настройка MinIO завершена!" 
+echo -e "${YELLOW}🔗 Доступные endpoints:${NC}"
+echo -e "  • MinIO API: http://$MINIO_ENDPOINT"
+echo -e "  • MinIO Console: http://$MINIO_ENDPOINT/minio (доступ через nginx)"
+echo -e "  • Media URL: https://foodgram.freedynamicdns.net/media/" 

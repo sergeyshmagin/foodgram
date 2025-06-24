@@ -56,6 +56,9 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+      # Настройки CORS для публичного доступа
+      MINIO_API_CORS_ALLOW_ORIGIN: "*"
+      MINIO_BROWSER_REDIRECT_URL: "https://foodgram.freedynamicdns.net/minio"
     ports:
       - "9000:9000"
       - "9001:9001"

@@ -1,0 +1,119 @@
+version: '3.8'
+
+services:
+  # PostgreSQL база данных
+  db:
+    image: postgres:13.10
+    environment:
+      POSTGRES_DB: foodgram_local
+      POSTGRES_USER: foodgram_user
+      POSTGRES_PASSWORD: foodgram_password
+    volumes:
+      - postgres_data_local:/var/lib/postgresql/data/
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U foodgram_user -d foodgram_local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis для кеширования  
+  redis:
+    image: redis:7.0-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MinIO для файлов
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ACCESS_KEY: minio_access_key
+      MINIO_SECRET_KEY: minio_secret_key_123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data_local:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # Django Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    environment:
+      # Django настройки
+      DEBUG: "True"
+      SECRET_KEY: "local-development-secret-key-for-testing"
+      DJANGO_SETTINGS_MODULE: "foodgram.settings.development"
+      ALLOWED_HOSTS: "localhost,127.0.0.1,backend"
+      
+      # База данных
+      POSTGRES_DB: foodgram_local
+      POSTGRES_USER: foodgram_user
+      POSTGRES_PASSWORD: foodgram_password
+      DB_HOST: db
+      DB_PORT: "5432"
+      
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ""
+      
+      # MinIO
+      MINIO_ACCESS_KEY: minio_access_key
+      MINIO_SECRET_KEY: minio_secret_key_123
+      MINIO_BUCKET_NAME: foodgram
+      MINIO_USE_HTTPS: "False"
+      MINIO_HOST: minio
+      MINIO_PUBLIC_ENDPOINT: "localhost:9000"
+      
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - backend_static_local:/app/staticfiles
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    command: >
+      sh -c "
+        echo 'Waiting for services...' &&
+        sleep 10 &&
+        echo 'Running migrations...' &&
+        python manage.py migrate &&
+        echo 'Creating superuser...' &&
+        python manage.py shell -c \"
+        from django.contrib.auth import get_user_model;
+        User = get_user_model();
+        if not User.objects.filter(username='admin').exists():
+            User.objects.create_superuser('admin', 'admin@test.com', 'admin123');
+            print('Superuser created')
+        else:
+            print('Superuser already exists')
+        \" &&
+        echo 'Setting up MinIO...' &&
+        python manage.py setup_minio &&
+        echo 'Starting development server...' &&
+        python manage.py runserver 0.0.0.0:8000
+      "
+
+volumes:
+  postgres_data_local:
+  minio_data_local:
+  backend_static_local: 

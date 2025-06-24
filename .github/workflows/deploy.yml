@@ -214,4 +214,67 @@ jobs:
           sudo docker compose -f infra/docker-compose.yml ps
           
           echo "🎉 Деплой завершен!"
-          echo "🌐 Сайт должен быть доступен на: http://${{ env.PROD_HOST }}" 
+          echo "🌐 Сайт должен быть доступен на: http://${{ env.PROD_HOST }}"
+          
+          echo "🔧 Настройка MinIO..."
+          sleep 10  # Даём время MinIO полностью запуститься
+          
+          # Устанавливаем MinIO Client
+          echo "📦 Установка MinIO Client..."
+          curl -s https://dl.min.io/client/mc/release/linux-amd64/mc -o /tmp/mc
+          chmod +x /tmp/mc
+          
+          # Ожидаем готовности MinIO
+          echo "⏳ Ожидание готовности MinIO..."
+          max_attempts=30
+          attempt=0
+          while [ $attempt -lt $max_attempts ]; do
+            if curl -s http://localhost:9000/minio/health/live > /dev/null 2>&1; then
+              echo "✅ MinIO готов"
+              break
+            fi
+            echo "⏳ MinIO ещё не готов, попытка $((attempt + 1))/$max_attempts..."
+            sleep 10
+            attempt=$((attempt + 1))
+          done
+          
+          if [ $attempt -eq $max_attempts ]; then
+            echo "❌ MinIO не готов после $max_attempts попыток"
+            sudo docker compose -f infra/docker-compose.yml logs minio
+          else
+            # Настраиваем MinIO
+            echo "🔑 Настройка подключения к MinIO..."
+            /tmp/mc alias set local http://localhost:9000 ${{ secrets.MINIO_ACCESS_KEY }} ${{ secrets.MINIO_SECRET_KEY }}
+            
+            # Создаём bucket
+            echo "📁 Создание bucket 'foodgram'..."
+            /tmp/mc mb local/foodgram --ignore-existing
+            
+            # Настраиваем публичную политику для медиа
+            echo "🔒 Настройка публичной политики..."
+            /tmp/mc anonymous set public local/foodgram/media/
+            
+            # Настраиваем CORS
+            echo "🌐 Настройка CORS..."
+            cat > /tmp/cors.json << 'EOF'
+            {
+              "CORSRules": [
+                {
+                  "AllowedOrigins": ["*"],
+                  "AllowedMethods": ["GET", "HEAD"],
+                  "AllowedHeaders": ["*"],
+                  "MaxAgeSeconds": 3600
+                }
+              ]
+            }
+            EOF
+            
+            /tmp/mc cors set /tmp/cors.json local/foodgram
+            
+            echo "✅ MinIO настроен успешно!"
+            echo "📊 Содержимое bucket:"
+            /tmp/mc ls local/foodgram --recursive | head -5 || echo "Bucket пуст"
+            
+            # Очистка
+            rm -f /tmp/mc /tmp/cors.json
+          fi 
