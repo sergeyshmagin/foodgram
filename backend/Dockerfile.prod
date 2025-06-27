@@ -18,8 +18,8 @@ CMD ["sh", "-c", "\
     python manage.py migrate && \
     echo 'Collecting static files...' && \
     python manage.py collectstatic --noinput && \
-    echo 'Creating superuser...' && \
-    python manage.py shell -c \"from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(email='admin@foodgram.ru').exists() or User.objects.create_superuser('admin@foodgram.ru', password='admin123')\" || true && \
+    echo 'Creating superuser (if ADMIN_EMAIL and ADMIN_PASSWORD are set)...' && \
+    python manage.py create_admin_safe || echo 'Skipping admin creation - use ADMIN_EMAIL and ADMIN_PASSWORD env vars' && \
     echo 'Loading data...' && \
     python manage.py loaddata fixtures/tags.json 2>/dev/null || true && \
     python manage.py loaddata fixtures/ingredients.json 2>/dev/null || true && \

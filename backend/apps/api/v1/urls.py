@@ -44,30 +44,3 @@ urlpatterns = [
     # Djoser authentication endpoints
     path("auth/", include("djoser.urls.authtoken"), name="auth"),
 ]
-
-# Дополнительные именованные URL для reverse() operations
-# Эти URL автоматически создаются роутером, но мы документируем их здесь:
-
-# Users:
-# - users-list: /api/v1/users/
-# - users-detail: /api/v1/users/{id}/
-# - users-subscriptions: /api/v1/users/subscriptions/
-# - users-subscribe: /api/v1/users/{id}/subscribe/
-# - users-avatar: /api/v1/users/me/avatar/
-# - users-set-password: /api/v1/users/set_password/
-
-# Recipes:
-# - recipes-list: /api/v1/recipes/
-# - recipes-detail: /api/v1/recipes/{id}/
-# - recipes-favorite: /api/v1/recipes/{id}/favorite/
-# - recipes-shopping-cart: /api/v1/recipes/{id}/shopping_cart/
-# - recipes-download-shopping-cart: /api/v1/recipes/download_shopping_cart/
-# - recipes-get-link: /api/v1/recipes/{id}/get-link/
-
-# Tags:
-# - tags-list: /api/v1/tags/
-# - tags-detail: /api/v1/tags/{id}/
-
-# Ingredients:
-# - ingredients-list: /api/v1/ingredients/
-# - ingredients-detail: /api/v1/ingredients/{id}/
