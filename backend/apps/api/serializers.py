@@ -195,7 +195,7 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         queryset=Tag.objects.all(), many=True, required=True
     )
     ingredients = serializers.ListField(write_only=True, required=True)
-    image = Base64ImageField(required=True)
+    image = Base64ImageField(required=False)
     cooking_time = serializers.IntegerField(
         min_value=MIN_COOKING_TIME, max_value=MAX_COOKING_TIME
     )
@@ -214,7 +214,11 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
     def validate(self, data):
         """Общая валидация данных рецепта."""
         # Проверяем обязательные поля
-        required_fields = ["tags", "ingredients", "image", "name", "text"]
+        required_fields = ["tags", "ingredients", "name", "text"]
+        # Добавляем image в обязательные поля только для создания рецепта
+        if not self.instance:  # Создание нового рецепта
+            required_fields.append("image")
+
         errors = {}
 
         for field in required_fields:
@@ -245,38 +249,62 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
             )
 
         ingredient_ids = []
-        for ingredient_data in value:
+        errors = []
+
+        for i, ingredient_data in enumerate(value):
             ingredient_id = ingredient_data.get("id")
             amount = ingredient_data.get("amount")
 
+            # Проверяем наличие ID ингредиента
             if not ingredient_id:
-                raise serializers.ValidationError("ID ингредиента обязателен.")
+                errors.append(f"Ингредиент #{i+1}: ID ингредиента обязателен.")
+                continue
 
             # Проверяем существование ингредиента в базе данных
             if not Ingredient.objects.filter(id=ingredient_id).exists():
-                raise serializers.ValidationError(
-                    f"Ингредиент с ID {ingredient_id} не существует."
+                errors.append(
+                    f"Ингредиент #{i+1}: Ингредиент с ID {ingredient_id}"
+                    " не существует."
                 )
+                continue
+
+            # Проверяем количество ингредиента
+            if amount is None or amount == "":
+                errors.append(
+                    f"Ингредиент #{i+1}: Количество ингредиента"
+                    " обязательно."
+                )
+                continue
 
             # Преобразуем amount в число для валидации
             try:
-                amount = int(amount) if amount else 0
+                amount_int = int(amount) if amount else 0
             except (ValueError, TypeError):
-                raise serializers.ValidationError(
-                    "Количество ингредиента должно быть числом."
+                errors.append(
+                    f"Ингредиент #{i+1}: Количество ингредиента"
+                    " должно быть числом."
                 )
+                continue
 
-            if not amount or amount < 1:
-                raise serializers.ValidationError(
-                    "Количество ингредиента должно быть больше 0."
+            # Проверяем, что количество больше 0
+            if amount_int <= 0:
+                errors.append(
+                    f"Ингредиент #{i+1}: Количество ингредиента"
+                    " должно быть больше 0."
                 )
+                continue
 
+            # Проверяем уникальность ингредиентов
             if ingredient_id in ingredient_ids:
-                raise serializers.ValidationError(
-                    "Ингредиенты не должны повторяться."
+                errors.append(
+                    f"Ингредиент #{i+1}: Ингредиенты не должны" " повторяться."
                 )
+                continue
 
             ingredient_ids.append(ingredient_id)
+
+        if errors:
+            raise serializers.ValidationError(errors)
 
         return value
 

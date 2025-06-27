@@ -46,6 +46,15 @@ const RecipeEdit = ({ onItemDelete }) => {
   const history = useHistory();
 
   const handleAddIngredient = () => {
+    // Проверка на корректность формата числа
+    if (
+      ingredientValue.amount !== "" &&
+      !/^\d+$/.test(ingredientValue.amount)
+    ) {
+      return setIngredientError("Количество ингредиента должно быть целым числом");
+    }
+
+    // Проверка на заполненность полей
     if (
       ingredientValue.amount === "" ||
       ingredientValue.name === "" ||
@@ -54,6 +63,13 @@ const RecipeEdit = ({ onItemDelete }) => {
       return setIngredientError("Ингредиент не выбран");
     }
 
+    // Проверка на нулевое или отрицательное количество
+    const amount = parseInt(ingredientValue.amount);
+    if (amount <= 0) {
+      return setIngredientError("Количество ингредиента должно быть больше 0");
+    }
+
+    // Проверка на дублирование ингредиентов
     if (recipeIngredients.find(({ name }) => name === ingredientValue.name)) {
       return setIngredientError("Ингредиент уже выбран");
     }
@@ -65,6 +81,7 @@ const RecipeEdit = ({ onItemDelete }) => {
       amount: "",
       measurement_unit: "",
     });
+    setIngredientError(""); // Очищаем ошибку после успешного добавления
   };
 
   useEffect(
@@ -131,9 +148,7 @@ const RecipeEdit = ({ onItemDelete }) => {
       recipeText === "" ||
       recipeName === "" ||
       recipeIngredients.length === 0 ||
-      recipeTime === "" ||
-      recipeFile === "" ||
-      recipeFile === null
+      recipeTime === ""
     ) {
       setSubmitError({ submitError: "Заполните все поля!" });
       return true;

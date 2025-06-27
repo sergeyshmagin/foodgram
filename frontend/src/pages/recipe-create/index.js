@@ -55,6 +55,11 @@ const RecipeCreate = ({ onEdit }) => {
       return setIngredientError("Ингредиент не выбран");
     }
 
+    const amount = parseInt(ingredientValue.amount);
+    if (amount <= 0) {
+      return setIngredientError("Количество ингредиента должно быть больше 0");
+    }
+
     if (recipeIngredients.find(({ name }) => name === ingredientValue.name)) {
       return setIngredientError("Ингредиент уже выбран");
     }
@@ -66,6 +71,7 @@ const RecipeCreate = ({ onEdit }) => {
       amount: "",
       measurement_unit: "",
     });
+    setIngredientError("");
   };
 
   useEffect(

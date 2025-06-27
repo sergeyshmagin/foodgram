@@ -266,6 +266,24 @@ class TestRecipeCreateUpdateSerializer:
         assert recipe.name == "Валидный рецепт"
         assert recipe.author == user
 
+    def test_recipe_update_without_image(self, recipe, tag, ingredient):
+        """Тест обновления рецепта без изображения."""
+        data = {
+            "name": "Обновленный рецепт",
+            "text": "Обновленное описание",
+            "cooking_time": 45,
+            "tags": [tag.id],
+            "ingredients": [{"id": ingredient.id, "amount": 150}],
+        }
+
+        serializer = RecipeCreateUpdateSerializer(instance=recipe, data=data)
+        assert serializer.is_valid(), serializer.errors
+
+        updated_recipe = serializer.save()
+        assert updated_recipe.name == "Обновленный рецепт"
+        assert updated_recipe.text == "Обновленное описание"
+        assert updated_recipe.cooking_time == 45
+
 
 @pytest.mark.django_db
 class TestRecipeMinifiedSerializer:

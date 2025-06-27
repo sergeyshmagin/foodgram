@@ -1,5 +1,10 @@
 """URL configuration for Foodgram API v1."""
 from django.urls import include, path
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularRedocView,
+    SpectacularSwaggerView,
+)
 from rest_framework.routers import DefaultRouter
 
 from ..views import (
@@ -22,6 +27,18 @@ router.register("recipes", RecipeViewSet, basename="recipes")
 urlpatterns = [
     # Health check endpoint для v1
     path("health/", health_check, name="health-check"),
+    # Документация API
+    path(
+        "docs/",
+        SpectacularSwaggerView.as_view(url_name="api:v1:schema"),
+        name="docs",
+    ),
+    path(
+        "redoc/",
+        SpectacularRedocView.as_view(url_name="api:v1:schema"),
+        name="redoc",
+    ),
+    path("schema/", SpectacularAPIView.as_view(), name="schema"),
     # API v1 endpoints
     path("", include(router.urls)),
     # Djoser authentication endpoints
