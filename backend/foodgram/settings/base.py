@@ -168,6 +168,10 @@ DJOSER = {
         "user_list": ["rest_framework.permissions.AllowAny"],
     },
     "HIDE_USERS": False,
+    # URL настройки для email уведомлений
+    "PASSWORD_RESET_CONFIRM_URL": "auth/password/reset/confirm/{uid}/{token}/",
+    "ACTIVATION_URL": "auth/users/activation/{uid}/{token}/",
+    "USERNAME_RESET_CONFIRM_URL": "auth/username/reset/confirm/{uid}/{token}/",
 }
 
 CORS_ALLOW_ALL_ORIGINS = True
