@@ -22,15 +22,16 @@ class TestRecipeAdmin:
         self.factory = RequestFactory()
 
     def test_recipe_admin_list_display(self):
-        """Тест отображения списка рецептов в админке."""
+        """Тест отображения списка рецептов."""
         expected_fields = (
             "id",
             "name",
+            "cooking_time_display",
             "author",
+            "tags_display",
+            "ingredients_display",
             "image_preview",
-            "cooking_time",
             "favorites_count",
-            "created",
         )
         assert self.admin.list_display == expected_fields
 
@@ -61,12 +62,12 @@ class TestRecipeAdmin:
 
         # Проверяем метод
         count = self.admin.favorites_count(recipe_with_annotation)
-        assert count == 1
+        assert count == "1 раз"
 
     def test_favorites_count_method_zero(self, recipe):
         """Тест метода подсчета избранного когда 0."""
         count = self.admin.favorites_count(recipe)
-        assert count == 0
+        assert count == "0 раз"
 
     def test_favorites_count_display_description(self):
         """Тест описания метода favorites_count."""
@@ -142,12 +143,12 @@ class TestIngredientAdmin:
 
     def test_ingredient_admin_list_display(self):
         """Тест отображения списка ингредиентов."""
-        expected_fields = ("id", "name", "measurement_unit")
+        expected_fields = ("id", "name", "measurement_unit", "recipes_count")
         assert self.admin.list_display == expected_fields
 
     def test_ingredient_admin_search_fields(self):
         """Тест полей поиска в админке ингредиентов."""
-        expected_fields = ("name",)
+        expected_fields = ("name", "measurement_unit")
         assert self.admin.search_fields == expected_fields
 
 
@@ -172,10 +173,16 @@ class TestAdminRegistration:
         assert admin.site.is_registered(User)
 
     def test_group_unregistered(self):
-        """Тест что модель Group удалена из админки."""
+        """Тест, что модель Group не зарегистрирована в админке."""
         from django.contrib.auth.models import Group
 
-        assert not admin.site.is_registered(Group)
+        assert Group not in admin.site._registry
+
+    def test_token_proxy_unregistered(self):
+        """Тест, что модель TokenProxy не зарегистрирована в админке."""
+        from rest_framework.authtoken.models import TokenProxy
+
+        assert TokenProxy not in admin.site._registry
 
 
 @pytest.mark.django_db

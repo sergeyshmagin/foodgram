@@ -1,0 +1,20 @@
+"""Константы для приложения recipes."""
+
+# Максимальные длины полей
+MAX_RECIPE_NAME_LENGTH = 256
+MAX_RECIPE_TEXT_LENGTH = 5000
+MAX_TAG_NAME_LENGTH = 64
+MAX_TAG_COLOR_LENGTH = 7  # Для HEX цвета (#RRGGBB)
+MAX_TAG_SLUG_LENGTH = 64
+MAX_INGREDIENT_NAME_LENGTH = 256
+MAX_INGREDIENT_UNIT_LENGTH = 64
+
+# Ограничения для числовых полей
+MIN_COOKING_TIME = 1
+MAX_COOKING_TIME = 10000  # минут (около 7 дней)
+MIN_INGREDIENT_AMOUNT = 1
+MAX_INGREDIENT_AMOUNT = 10000
+
+# Длины полей для абстрактных моделей
+MAX_NAME_LENGTH = 256
+MAX_SLUG_LENGTH = 256

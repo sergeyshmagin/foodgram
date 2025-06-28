@@ -1,4 +1,4 @@
-"""Admin configuration for recipes app."""
+"""Админ-панель для приложения recipes."""
 from django.contrib import admin
 from django.db.models import Count
 from django.utils.safestring import mark_safe
@@ -15,7 +15,6 @@ from .models import (
     IngredientInRecipe,
     Recipe,
     ShoppingCart,
-    Subscription,
     Tag,
 )
 
@@ -39,9 +38,10 @@ class TagAdmin(admin.ModelAdmin):
     list_per_page = ADMIN_LIST_PER_PAGE
 
     @admin.display(description="Цвет")
+    @mark_safe
     def color_display(self, obj):
         """Отображение цвета."""
-        return mark_safe(
+        return (
             f'<div style="width: {COLOR_PREVIEW_SIZE}px; '
             f"height: {COLOR_PREVIEW_SIZE}px; "
             f'background-color: {obj.color}; border: 1px solid #ccc;"></div>'
@@ -52,11 +52,25 @@ class TagAdmin(admin.ModelAdmin):
 class IngredientAdmin(admin.ModelAdmin):
     """Админ для модели Ingredient."""
 
-    list_display = ("id", "name", "measurement_unit")
+    list_display = ("id", "name", "measurement_unit", "recipes_count")
     list_display_links = ("id", "name")
-    search_fields = ("name",)
+    search_fields = ("name", "measurement_unit")
     list_filter = ("measurement_unit",)
     list_per_page = ADMIN_LIST_PER_PAGE_LARGE
+
+    def get_queryset(self, request):
+        """Оптимизированный queryset с аннотациями."""
+        queryset = super().get_queryset(request)
+        return queryset.annotate(
+            recipes_count_annotated=Count("ingredient_recipes", distinct=True)
+        )
+
+    @admin.display(
+        description="Применений в рецептах", ordering="recipes_count_annotated"
+    )
+    def recipes_count(self, obj):
+        """Количество применений ингредиента в рецептах."""
+        return getattr(obj, "recipes_count_annotated", 0)
 
 
 @admin.register(Recipe)
@@ -66,11 +80,12 @@ class RecipeAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "name",
+        "cooking_time_display",
         "author",
+        "tags_display",
+        "ingredients_display",
         "image_preview",
-        "cooking_time",
         "favorites_count",
-        "created",
     )
     list_display_links = ("id", "name")
     list_filter = ("tags", "created", "author")
@@ -97,26 +112,80 @@ class RecipeAdmin(admin.ModelAdmin):
         queryset = super().get_queryset(request)
         return (
             queryset.select_related("author")
-            .prefetch_related("tags")
-            .annotate(favorites_count_annotated=Count("favorited_by"))
+            .prefetch_related("tags", "recipe_ingredients__ingredient")
+            .annotate(
+                favorites_count_annotated=Count("favorites", distinct=True)
+            )
         )
 
+    @admin.display(description="Время готовки (мин)", ordering="cooking_time")
+    def cooking_time_display(self, obj):
+        """Отображение времени готовки."""
+        return f"{obj.cooking_time} мин"
+
+    @admin.display(description="Теги")
+    @mark_safe
+    def tags_display(self, obj):
+        """Отображение тегов с цветами."""
+        if not obj.tags.exists():
+            return "—"
+
+        tags_html = []
+        for tag in obj.tags.all():
+            tags_html.append(
+                f'<span style="background-color: {tag.color}; '
+                f"color: white; padding: 2px 6px; border-radius: 3px; "
+                f'font-size: 10px; margin-right: 3px;">{tag.name}</span>'
+            )
+        return "".join(tags_html)
+
+    @admin.display(description="Ингредиенты")
+    @mark_safe
+    def ingredients_display(self, obj):
+        """Отображение ингредиентов."""
+        ingredients = [
+            ingredient_recipe.ingredient.name
+            for ingredient_recipe in obj.recipe_ingredients.all()[:3]
+        ]
+
+        if not ingredients:
+            return "—"
+
+        result = ", ".join(ingredients)
+
+        # Если ингредиентов больше 3, добавляем "..."
+        total_count = obj.recipe_ingredients.count()
+        if total_count > 3:
+            result += f" <em>(+{total_count - 3} еще)</em>"
+
+        return result
+
     @admin.display(description="Изображение")
+    @mark_safe
     def image_preview(self, obj):
         """Предварительный просмотр изображения."""
         if obj.image:
-            return mark_safe(
+            return (
                 f'<img src="{obj.image.url}" width="{IMAGE_PREVIEW_SIZE}" '
-                f'height="{IMAGE_PREVIEW_SIZE}" style="object-fit: cover;" />'
+                f'height="{IMAGE_PREVIEW_SIZE}" style="object-fit: cover; '
+                f'border-radius: 4px; border: 1px solid #ddd;" />'
             )
-        return "—"
+        return '<span style="color: #999;">Нет изображения</span>'
 
     @admin.display(
         description="В избранном", ordering="favorites_count_annotated"
     )
     def favorites_count(self, obj):
         """Количество добавлений в избранное."""
-        return getattr(obj, "favorites_count_annotated", 0)
+        count = getattr(obj, "favorites_count_annotated", 0)
+        if count == 0:
+            return "0 раз"
+        elif count == 1:
+            return "1 раз"
+        elif 2 <= count <= 4:
+            return f"{count} раза"
+        else:
+            return f"{count} раз"
 
 
 @admin.register(IngredientInRecipe)
@@ -152,12 +221,10 @@ class ShoppingCartAdmin(admin.ModelAdmin):
     list_per_page = ADMIN_LIST_PER_PAGE_LARGE
 
 
-@admin.register(Subscription)
-class SubscriptionAdmin(admin.ModelAdmin):
-    """Админ для модели Subscription."""
+# Удаляем стандартную регистрацию Group из админки
+try:
+    from django.contrib.auth.models import Group
 
-    list_display = ("id", "user", "author", "created")
-    list_display_links = ("id",)
-    list_filter = ("created",)
-    search_fields = ("user__username", "author__username")
-    list_per_page = ADMIN_LIST_PER_PAGE_LARGE
+    admin.site.unregister(Group)
+except admin.sites.NotRegistered:
+    pass

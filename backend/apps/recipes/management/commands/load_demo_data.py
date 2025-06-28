@@ -18,9 +18,9 @@ from apps.recipes.models import (
     IngredientInRecipe,
     Recipe,
     ShoppingCart,
-    Subscription,
     Tag,
 )
+from apps.users.models import Subscription
 
 User = get_user_model()
 

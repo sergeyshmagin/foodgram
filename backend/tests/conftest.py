@@ -1,10 +1,12 @@
-"""Конфигурация тестов для Foodgram."""
+"""Configuration for pytest."""
 import base64
 import os
+import tempfile
 
 import django
 import pytest
 from apps.recipes.models import Ingredient, Recipe, Tag
+from apps.users.models import Subscription
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.authtoken.models import Token
@@ -23,6 +25,9 @@ short_base64 = (
     "AAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
 )
 
+# Создаем временную директорию для медиа-файлов в тестах
+TEMP_MEDIA_ROOT = tempfile.mkdtemp()
+
 
 @pytest.fixture(autouse=True)
 def enable_db_access(db):
@@ -38,10 +43,10 @@ def api_client():
 
 @pytest.fixture
 def user():
-    """Создает тестового пользователя."""
+    """Фикстура для создания обычного пользователя."""
     return User.objects.create_user(
-        email="test@example.com",
         username="testuser",
+        email="test@example.com",
         first_name="Test",
         last_name="User",
         password="testpass123",
@@ -50,10 +55,10 @@ def user():
 
 @pytest.fixture
 def another_user():
-    """Другой тестовый пользователь для тестов подписок."""
+    """Фикстура для создания второго пользователя."""
     return User.objects.create_user(
-        email="another@example.com",
         username="anotheruser",
+        email="another@example.com",
         first_name="Another",
         last_name="User",
         password="anotherpass123",
@@ -62,9 +67,7 @@ def another_user():
 
 @pytest.fixture
 def subscription(user, another_user):
-    """Создает подписку между пользователями."""
-    from apps.recipes.models import Subscription
-
+    """Фикстура для создания подписки."""
     return Subscription.objects.create(user=user, author=another_user)
 
 
@@ -158,13 +161,13 @@ def recipe_data(tag, ingredient):
 
 @pytest.fixture
 def superuser():
-    """Создает суперпользователя для тестов админки."""
+    """Фикстура для создания суперпользователя."""
     return User.objects.create_superuser(
-        email="super@example.com",
-        username="superuser",
-        first_name="Super",
+        username="admin",
+        email="admin@example.com",
+        first_name="Admin",
         last_name="User",
-        password="superpass123",
+        password="adminpass123",
     )
 
 
@@ -215,3 +218,12 @@ def recipe_detail_url(recipe):
 def health_check_url():
     """URL для проверки здоровья API."""
     return "/api/v1/health/"
+
+
+@pytest.fixture
+def media_tmp(settings, tmp_path):
+    """Фикстура для временного каталога медиа-файлов."""
+    media_root = tmp_path / "media"
+    media_root.mkdir()
+    settings.MEDIA_ROOT = media_root
+    return media_root

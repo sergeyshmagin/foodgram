@@ -1,40 +1,45 @@
 """Serializers for Foodgram API."""
-import base64
-
 from apps.recipes.models import (
     Favorite,
     Ingredient,
     IngredientInRecipe,
     Recipe,
     ShoppingCart,
-    Subscription,
     Tag,
 )
+from apps.users.models import Subscription
 from django.contrib.auth import get_user_model
-from django.core.files.base import ContentFile
 from django.db import transaction
 from djoser.serializers import UserCreateSerializer
 from djoser.serializers import UserSerializer as DjoserUserSerializer
 from foodgram.constants import MAX_COOKING_TIME, MIN_COOKING_TIME
 from rest_framework import serializers
 
+from .fields import Base64ImageField
+
 User = get_user_model()
 
 
-class Base64ImageField(serializers.ImageField):
-    """Кастомное поле для загрузки изображений в формате base64."""
+class IngredientInRecipeCreateSerializer(serializers.Serializer):
+    """Сериализатор для создания ингредиентов в рецепте."""
 
-    def to_internal_value(self, data):
-        """Конвертирует base64 строку в файл изображения."""
-        if isinstance(data, str) and data.startswith("data:image"):
-            # Извлекаем формат и данные из base64 строки
-            format, imgstr = data.split(";base64,")
-            ext = format.split("/")[-1]
+    id = serializers.PrimaryKeyRelatedField(
+        queryset=Ingredient.objects.all(),
+        error_messages={
+            "does_not_exist": "Ингредиент с указанным ID не существует."
+        },
+    )
+    amount = serializers.IntegerField(
+        min_value=1,
+        error_messages={
+            "min_value": "Количество ингредиента должно быть больше 0.",
+            "invalid": "Количество ингредиента должно быть числом.",
+        },
+    )
 
-            # Создаем файл из base64 данных
-            data = ContentFile(base64.b64decode(imgstr), name=f"temp.{ext}")
-
-        return super().to_internal_value(data)
+    def validate(self, data):
+        """Дополнительная валидация данных ингредиента."""
+        return data
 
 
 class UserSerializer(DjoserUserSerializer):
@@ -194,7 +199,9 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(), many=True, required=True
     )
-    ingredients = serializers.ListField(write_only=True, required=True)
+    ingredients = IngredientInRecipeCreateSerializer(
+        many=True, write_only=True, required=True
+    )
     image = Base64ImageField(required=False)
     cooking_time = serializers.IntegerField(
         min_value=MIN_COOKING_TIME, max_value=MAX_COOKING_TIME
@@ -242,69 +249,19 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         return data
 
     def validate_ingredients(self, value):
-        """Валидация ингредиентов."""
+        """Валидация ингредиентов на уникальность."""
         if not value:
             raise serializers.ValidationError(
                 "Необходимо добавить хотя бы один ингредиент."
             )
 
-        ingredient_ids = []
-        errors = []
+        # Используем множества для проверки дубликатов
+        ingredient_ids = {item["id"].id for item in value}
 
-        for i, ingredient_data in enumerate(value):
-            ingredient_id = ingredient_data.get("id")
-            amount = ingredient_data.get("amount")
-
-            # Проверяем наличие ID ингредиента
-            if not ingredient_id:
-                errors.append(f"Ингредиент #{i+1}: ID ингредиента обязателен.")
-                continue
-
-            # Проверяем существование ингредиента в базе данных
-            if not Ingredient.objects.filter(id=ingredient_id).exists():
-                errors.append(
-                    f"Ингредиент #{i+1}: Ингредиент с ID {ingredient_id}"
-                    " не существует."
-                )
-                continue
-
-            # Проверяем количество ингредиента
-            if amount is None or amount == "":
-                errors.append(
-                    f"Ингредиент #{i+1}: Количество ингредиента"
-                    " обязательно."
-                )
-                continue
-
-            # Преобразуем amount в число для валидации
-            try:
-                amount_int = int(amount) if amount else 0
-            except (ValueError, TypeError):
-                errors.append(
-                    f"Ингредиент #{i+1}: Количество ингредиента"
-                    " должно быть числом."
-                )
-                continue
-
-            # Проверяем, что количество больше 0
-            if amount_int <= 0:
-                errors.append(
-                    f"Ингредиент #{i+1}: Количество ингредиента"
-                    " должно быть больше 0."
-                )
-                continue
-
-            # Проверяем уникальность ингредиентов
-            if ingredient_id in ingredient_ids:
-                errors.append(
-                    f"Ингредиент #{i+1}: Ингредиенты не должны" " повторяться."
-                )
-                continue
-
-            ingredient_ids.append(ingredient_id)
-
-        if errors:
-            raise serializers.ValidationError(errors)
+        if len(ingredient_ids) != len(value):
+            raise serializers.ValidationError(
+                "Ингредиенты не должны повторяться."
+            )
 
         return value
 
@@ -355,17 +312,10 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         ingredient_recipes = []
 
         for ingredient_data in ingredients:
-            # Дополнительная проверка на случай, если валидация была пропущена
-            ingredient_id = ingredient_data["id"]
-            if not Ingredient.objects.filter(id=ingredient_id).exists():
-                raise serializers.ValidationError(
-                    f"Ингредиент с ID {ingredient_id} не существует."
-                )
-
             ingredient_recipes.append(
                 IngredientInRecipe(
                     recipe=recipe,
-                    ingredient_id=ingredient_id,
+                    ingredient=ingredient_data["id"],
                     amount=ingredient_data["amount"],
                 )
             )

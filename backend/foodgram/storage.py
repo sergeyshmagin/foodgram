@@ -1,6 +1,4 @@
-"""
-Кастомное хранилище для MinIO с правильными URL.
-"""
+"""Custom storage backends for Django."""
 import os
 
 from django.conf import settings

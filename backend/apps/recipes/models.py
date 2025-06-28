@@ -2,13 +2,16 @@
 from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from foodgram.constants import (
+
+from .constants import (
     MAX_COOKING_TIME,
     MAX_INGREDIENT_AMOUNT,
     MAX_INGREDIENT_NAME_LENGTH,
     MAX_INGREDIENT_UNIT_LENGTH,
+    MAX_NAME_LENGTH,
     MAX_RECIPE_NAME_LENGTH,
     MAX_RECIPE_TEXT_LENGTH,
+    MAX_SLUG_LENGTH,
     MAX_TAG_COLOR_LENGTH,
     MAX_TAG_NAME_LENGTH,
     MAX_TAG_SLUG_LENGTH,
@@ -33,7 +36,7 @@ class TimeStampedModel(models.Model):
 class UserActionModel(TimeStampedModel):
     """Абстрактная модель для действий пользователей.
 
-    Используется для избранного, корзины покупок и подписок.
+    Используется для избранного, корзины покупок.
     """
 
     user = models.ForeignKey(
@@ -52,13 +55,13 @@ class NameSlugModel(models.Model):
 
     name = models.CharField(
         "Название",
-        max_length=200,
+        max_length=MAX_NAME_LENGTH,
         unique=True,
         help_text="Уникальное название",
     )
     slug = models.SlugField(
         "Слаг",
-        max_length=200,
+        max_length=MAX_SLUG_LENGTH,
         unique=True,
         help_text="Уникальный слаг",
     )
@@ -167,7 +170,7 @@ class Recipe(models.Model):
         verbose_name="Теги",
         help_text="Теги рецепта",
     )
-    cooking_time = models.PositiveIntegerField(
+    cooking_time = models.PositiveSmallIntegerField(
         "Время приготовления",
         validators=[
             MinValueValidator(
@@ -218,7 +221,7 @@ class IngredientInRecipe(models.Model):
         related_name="ingredient_recipes",
         verbose_name="Ингредиент",
     )
-    amount = models.PositiveIntegerField(
+    amount = models.PositiveSmallIntegerField(
         "Количество",
         validators=[
             MinValueValidator(
@@ -256,7 +259,20 @@ class IngredientInRecipe(models.Model):
         return f"{self.ingredient.name} в {self.recipe.name}"
 
 
-class Favorite(UserActionModel):
+class RecipeUserActionModel(UserActionModel):
+    """Базовая модель для действий пользователей с рецептами."""
+
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        verbose_name="Рецепт",
+    )
+
+    class Meta(UserActionModel.Meta):
+        abstract = True
+
+
+class Favorite(RecipeUserActionModel):
     """Модель избранных рецептов."""
 
     user = models.ForeignKey(
@@ -272,7 +288,7 @@ class Favorite(UserActionModel):
         verbose_name="Рецепт",
     )
 
-    class Meta(UserActionModel.Meta):
+    class Meta(RecipeUserActionModel.Meta):
         """Метаданные модели Favorite."""
 
         verbose_name = "Избранное"
@@ -288,7 +304,7 @@ class Favorite(UserActionModel):
         return f"{self.user.username} добавил {self.recipe.name} в избранное"
 
 
-class ShoppingCart(UserActionModel):
+class ShoppingCart(RecipeUserActionModel):
     """Модель списка покупок."""
 
     user = models.ForeignKey(
@@ -304,7 +320,7 @@ class ShoppingCart(UserActionModel):
         verbose_name="Рецепт",
     )
 
-    class Meta(UserActionModel.Meta):
+    class Meta(RecipeUserActionModel.Meta):
         """Метаданные модели ShoppingCart."""
 
         verbose_name = "Корзина"
@@ -319,40 +335,3 @@ class ShoppingCart(UserActionModel):
     def __str__(self):
         """Строковое представление корзины."""
         return f"{self.user.username} добавил {self.recipe.name} в корзину"
-
-
-class Subscription(UserActionModel):
-    """Модель подписок на авторов."""
-
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name="subscriptions",
-        verbose_name="Пользователь",
-    )
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name="subscribers",
-        verbose_name="Автор",
-    )
-
-    class Meta(UserActionModel.Meta):
-        """Метаданные модели Subscription."""
-
-        verbose_name = "Подписка"
-        verbose_name_plural = "Подписки"
-        constraints = [
-            models.UniqueConstraint(
-                fields=["user", "author"],
-                name="unique_user_author_subscription",
-            ),
-            models.CheckConstraint(
-                check=~models.Q(user=models.F("author")),
-                name="prevent_self_subscription",
-            ),
-        ]
-
-    def __str__(self):
-        """Строковое представление подписки."""
-        return f"{self.user.username} подписан на {self.author.username}"

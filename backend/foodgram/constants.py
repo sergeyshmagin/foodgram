@@ -27,6 +27,9 @@ MAX_TAG_COLOR_LENGTH = 7  # Hex color code like #FF0000
 RECIPES_PAGE_SIZE = 6
 USERS_PAGE_SIZE = 6
 
+# API Permissions
+SAFE_HTTP_METHODS = ("GET", "HEAD", "OPTIONS")
+
 # File upload
 MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB in bytes
 ALLOWED_IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif"]

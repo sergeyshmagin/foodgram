@@ -3,9 +3,10 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import Group
 from django.utils.safestring import mark_safe
-from foodgram.constants import IMAGE_PREVIEW_SIZE
+from foodgram.constants import ADMIN_LIST_PER_PAGE_LARGE, IMAGE_PREVIEW_SIZE
+from rest_framework.authtoken.models import TokenProxy
 
-from .models import User
+from .models import Subscription, User
 
 
 @admin.register(User)
@@ -80,12 +81,24 @@ class CustomUserAdmin(BaseUserAdmin):
         if obj.avatar:
             return mark_safe(
                 f'<img src="{obj.avatar.url}" '
-                f'width="{IMAGE_PREVIEW_SIZE//2}" '
-                f'height="{IMAGE_PREVIEW_SIZE//2}" '
+                f'width="{IMAGE_PREVIEW_SIZE // 2}" '
+                f'height="{IMAGE_PREVIEW_SIZE // 2}" '
                 f'style="border-radius: 50%;" />'
             )
         return "—"
 
 
-# Отключаем стандартную модель Group из админки
+@admin.register(Subscription)
+class SubscriptionAdmin(admin.ModelAdmin):
+    """Админ для модели Subscription."""
+
+    list_display = ("id", "user", "author", "created")
+    list_display_links = ("id",)
+    list_filter = ("created",)
+    search_fields = ("user__username", "author__username")
+    list_per_page = ADMIN_LIST_PER_PAGE_LARGE
+
+
+# Отключаем ненужные модели из админки
 admin.site.unregister(Group)
+admin.site.unregister(TokenProxy)

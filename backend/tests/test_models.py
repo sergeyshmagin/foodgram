@@ -1,19 +1,19 @@
 """Тесты моделей для Foodgram."""
 import pytest
+from apps.recipes.constants import MAX_RECIPE_NAME_LENGTH
 from apps.recipes.models import (
     Favorite,
     Ingredient,
     IngredientInRecipe,
     Recipe,
     ShoppingCart,
-    Subscription,
     Tag,
 )
+from apps.users.models import Subscription
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError
-from foodgram.constants import MAX_RECIPE_NAME_LENGTH
 
 User = get_user_model()
 
@@ -52,6 +52,28 @@ class TestUserModel:
     def test_user_str_representation(self, user):
         """Тест строкового представления пользователя."""
         assert str(user) == user.username
+
+    def test_username_me_validation(self):
+        """Тест валидации запрета username='me'."""
+        with pytest.raises(ValidationError):
+            user = User(
+                username="me",
+                email="test@example.com",
+                first_name="Test",
+                last_name="User",
+            )
+            user.full_clean()
+
+    def test_username_ME_validation(self):
+        """Тест валидации запрета username='ME' (регистронезависимо)."""
+        with pytest.raises(ValidationError):
+            user = User(
+                username="ME",
+                email="test@example.com",
+                first_name="Test",
+                last_name="User",
+            )
+            user.full_clean()
 
 
 @pytest.mark.django_db
@@ -297,8 +319,8 @@ class TestFavoriteModel:
 
         with pytest.raises(IntegrityError):
             Favorite.objects.create(
-                user=user, recipe=recipe  # Дублирующаяся связь
-            )
+                user=user, recipe=recipe
+            )  # Дублирующаяся связь
 
 
 @pytest.mark.django_db

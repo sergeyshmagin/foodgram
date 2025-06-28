@@ -1,21 +1,6 @@
 """Custom permissions for Foodgram API."""
+from foodgram.constants import SAFE_HTTP_METHODS
 from rest_framework import permissions
-
-
-class IsOwnerOrReadOnly(permissions.BasePermission):
-    """
-    Разрешение на изменение только владельцам объекта.
-    НЕ включает проверку аутентификации - используется отдельно.
-    """
-
-    def has_object_permission(self, request, view, obj):
-        """Проверяет разрешения на уровне объекта."""
-        # Разрешения на чтение для всех
-        if request.method in permissions.SAFE_METHODS:
-            return True
-
-        # Разрешения на запись только для владельца
-        return obj.author == request.user
 
 
 class IsAuthorOrReadOnly(permissions.BasePermission):
@@ -27,7 +12,7 @@ class IsAuthorOrReadOnly(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         """Проверяет разрешения на уровне объекта."""
         # Разрешения на чтение для всех
-        if request.method in permissions.SAFE_METHODS:
+        if request.method in SAFE_HTTP_METHODS:
             return True
 
         # Разрешения на запись только для автора
