@@ -63,7 +63,7 @@ class UserViewSet(DjoserUserViewSet):
 
     def get_permissions(self):
         """Получить разрешения для действия."""
-        if self.action in ["list", "retrieve", "create"]:
+        if self.action in ["list", "retrieve", "create", "reset_password"]:
             permission_classes = [AllowAny]
         else:
             permission_classes = [IsAuthenticated]
