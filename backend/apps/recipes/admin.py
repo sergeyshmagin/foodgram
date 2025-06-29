@@ -1,4 +1,5 @@
 """Админ-панель для приложения recipes."""
+
 from django.contrib import admin
 from django.db.models import Count
 from django.utils.safestring import mark_safe
@@ -114,7 +115,7 @@ class RecipeAdmin(admin.ModelAdmin):
             queryset.select_related("author")
             .prefetch_related("tags", "recipe_ingredients__ingredient")
             .annotate(
-                favorites_count_annotated=Count("favorites", distinct=True)
+                favorites_count_annotated=Count("favorite_set", distinct=True)
             )
         )
 
@@ -219,12 +220,3 @@ class ShoppingCartAdmin(admin.ModelAdmin):
     list_filter = ("created",)
     search_fields = ("user__username", "recipe__name")
     list_per_page = ADMIN_LIST_PER_PAGE_LARGE
-
-
-# Удаляем стандартную регистрацию Group из админки
-try:
-    from django.contrib.auth.models import Group
-
-    admin.site.unregister(Group)
-except admin.sites.NotRegistered:
-    pass

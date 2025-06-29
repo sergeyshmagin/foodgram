@@ -43,6 +43,7 @@ class UserActionModel(TimeStampedModel):
         User,
         on_delete=models.CASCADE,
         verbose_name="Пользователь",
+        related_name="%(class)s_set",
     )
 
     class Meta:
@@ -266,6 +267,7 @@ class RecipeUserActionModel(UserActionModel):
         Recipe,
         on_delete=models.CASCADE,
         verbose_name="Рецепт",
+        related_name="%(class)s_set",
     )
 
     class Meta(UserActionModel.Meta):
@@ -274,19 +276,6 @@ class RecipeUserActionModel(UserActionModel):
 
 class Favorite(RecipeUserActionModel):
     """Модель избранных рецептов."""
-
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name="favorites",
-        verbose_name="Пользователь",
-    )
-    recipe = models.ForeignKey(
-        Recipe,
-        on_delete=models.CASCADE,
-        related_name="favorited_by",
-        verbose_name="Рецепт",
-    )
 
     class Meta(RecipeUserActionModel.Meta):
         """Метаданные модели Favorite."""
@@ -306,19 +295,6 @@ class Favorite(RecipeUserActionModel):
 
 class ShoppingCart(RecipeUserActionModel):
     """Модель списка покупок."""
-
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name="shopping_cart",
-        verbose_name="Пользователь",
-    )
-    recipe = models.ForeignKey(
-        Recipe,
-        on_delete=models.CASCADE,
-        related_name="in_shopping_cart",
-        verbose_name="Рецепт",
-    )
 
     class Meta(RecipeUserActionModel.Meta):
         """Метаданные модели ShoppingCart."""

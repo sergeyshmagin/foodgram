@@ -1,4 +1,5 @@
 """Views for Foodgram API."""
+
 from apps.recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
 from apps.users.models import Subscription
 from django.contrib.auth import get_user_model, update_session_auth_hash
@@ -63,7 +64,7 @@ class UserViewSet(DjoserUserViewSet):
 
     def get_permissions(self):
         """Получить разрешения для действия."""
-        if self.action in ["list", "retrieve", "create", "reset_password"]:
+        if self.action in ["list", "retrieve", "create"]:
             permission_classes = [AllowAny]
         else:
             permission_classes = [IsAuthenticated]

@@ -9,6 +9,7 @@ from apps.recipes.models import Ingredient, Recipe, Tag
 from apps.users.models import Subscription
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.urls import reverse
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
@@ -187,37 +188,37 @@ def staff_user():
 @pytest.fixture
 def users_url():
     """URL для API пользователей."""
-    return "/api/v1/users/"
+    return reverse("api:v1:users-list")
 
 
 @pytest.fixture
 def tags_url():
     """URL для API тегов."""
-    return "/api/v1/tags/"
+    return reverse("api:v1:tags-list")
 
 
 @pytest.fixture
 def ingredients_url():
     """URL для API ингредиентов."""
-    return "/api/v1/ingredients/"
+    return reverse("api:v1:ingredients-list")
 
 
 @pytest.fixture
 def recipes_url():
     """URL для API рецептов."""
-    return "/api/v1/recipes/"
+    return reverse("api:v1:recipes-list")
 
 
 @pytest.fixture
 def recipe_detail_url(recipe):
     """URL для детального просмотра рецепта."""
-    return f"/api/v1/recipes/{recipe.id}/"
+    return reverse("api:v1:recipes-detail", kwargs={"pk": recipe.id})
 
 
 @pytest.fixture
 def health_check_url():
     """URL для проверки здоровья API."""
-    return "/api/v1/health/"
+    return reverse("api:v1:health-check")
 
 
 @pytest.fixture

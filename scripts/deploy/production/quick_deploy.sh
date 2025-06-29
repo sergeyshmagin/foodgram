@@ -46,18 +46,12 @@ docker exec foodgram-backend python manage.py shell -c "
 from django.contrib.auth import get_user_model
 User = get_user_model()
 if not User.objects.filter(is_superuser=True).exists():
-    print('Создание суперпользователя...')
-    import os
-    User.objects.create_superuser(
-        email='admin@foodgram.ru',
-        username='admin',
-        first_name='Admin',
-        last_name='User',
-        password=os.environ.get('ADMIN_PASSWORD', 'admin123')
-    )
-    print('Суперпользователь создан!')
+    print('⚠️ Суперпользователь не найден!')
+    print('Используйте команду create_admin_safe для безопасного создания:')
+    print('docker exec foodgram-backend python manage.py create_admin_safe')
+    print('Или установите переменные окружения ADMIN_EMAIL и ADMIN_PASSWORD')
 else:
-    print('Суперпользователь уже существует')
+    print('✅ Суперпользователь уже существует')
 "
 
 # Загрузка начальных данных

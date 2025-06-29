@@ -2,6 +2,7 @@
 import pytest
 from apps.recipes.models import Favorite, Recipe, ShoppingCart
 from django.contrib.auth import get_user_model
+from django.urls import reverse
 from foodgram.constants import MAX_COOKING_TIME, MIN_COOKING_TIME
 from rest_framework import status
 
@@ -52,7 +53,7 @@ class TestUserAPI:
 
     def test_set_password(self, authenticated_client, user):
         """Тест изменения пароля."""
-        url = "/api/v1/users/set_password/"
+        url = reverse("api:v1:users-set-password")
         data = {
             "current_password": "testpass123",
             "new_password": "newpass123",
@@ -68,7 +69,7 @@ class TestUserAPI:
 
     def test_set_password_invalid_current(self, authenticated_client):
         """Тест изменения пароля с неверным текущим паролем."""
-        url = "/api/v1/users/set_password/"
+        url = reverse("api:v1:users-set-password")
         data = {
             "current_password": "wrongpass",
             "new_password": "newpass123",
@@ -81,7 +82,7 @@ class TestUserAPI:
 
     def test_reset_password(self, api_client, user):
         """Тест сброса пароля."""
-        url = "/api/v1/users/reset_password/"
+        url = reverse("api:v1:users-reset-password")
         data = {"email": user.email}
 
         response = api_client.post(url, data, format="json")
@@ -90,7 +91,7 @@ class TestUserAPI:
 
     def test_reset_password_nonexistent_user(self, api_client):
         """Тест сброса пароля для несуществующего пользователя."""
-        url = "/api/v1/users/reset_password/"
+        url = reverse("api:v1:users-reset-password")
         data = {"email": "nonexistent@example.com"}
 
         response = api_client.post(url, data, format="json")
@@ -259,7 +260,7 @@ class TestRecipeAPI:
 
     def test_recipe_get_link(self, api_client, recipe):
         """Тест получения короткой ссылки на рецепт."""
-        url = f"/api/v1/recipes/{recipe.pk}/get-link/"
+        url = reverse("api:v1:recipes-get-link", kwargs={"pk": recipe.pk})
         response = api_client.get(url)
 
         assert response.status_code == 200
@@ -283,7 +284,7 @@ class TestFavoriteAPI:
 
     def test_add_to_favorites(self, authenticated_client, recipe, user):
         """Тест добавления рецепта в избранное."""
-        url = f"/api/v1/recipes/{recipe.pk}/favorite/"
+        url = reverse("api:v1:recipes-favorite", kwargs={"pk": recipe.pk})
 
         response = authenticated_client.post(url)
 
@@ -295,7 +296,7 @@ class TestFavoriteAPI:
         # Добавляем в избранное
         Favorite.objects.create(user=user, recipe=recipe)
 
-        url = f"/api/v1/recipes/{recipe.pk}/favorite/"
+        url = reverse("api:v1:recipes-favorite", kwargs={"pk": recipe.pk})
         response = authenticated_client.delete(url)
 
         assert response.status_code == status.HTTP_204_NO_CONTENT
@@ -308,7 +309,7 @@ class TestShoppingCartAPI:
 
     def test_add_to_shopping_cart(self, authenticated_client, recipe, user):
         """Тест добавления рецепта в список покупок."""
-        url = f"/api/v1/recipes/{recipe.pk}/shopping_cart/"
+        url = reverse("api:v1:recipes-shopping-cart", kwargs={"pk": recipe.pk})
 
         response = authenticated_client.post(url)
 
@@ -320,7 +321,7 @@ class TestShoppingCartAPI:
         # Добавляем рецепт в корзину
         ShoppingCart.objects.create(user=user, recipe=recipe)
 
-        url = "/api/v1/recipes/download_shopping_cart/"
+        url = reverse("api:v1:recipes-download-shopping-cart")
         response = authenticated_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
@@ -357,7 +358,7 @@ class TestShoppingCartAPI:
         # Добавляем рецепт в корзину
         ShoppingCart.objects.create(user=user, recipe=recipe)
 
-        url = "/api/v1/recipes/download_shopping_cart/"
+        url = reverse("api:v1:recipes-download-shopping-cart")
         response = authenticated_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK

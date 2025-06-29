@@ -26,6 +26,7 @@ MAX_TAG_COLOR_LENGTH = 7  # Hex color code like #FF0000
 # Pagination
 RECIPES_PAGE_SIZE = 6
 USERS_PAGE_SIZE = 6
+MAX_PAGE_SIZE = 100
 
 # API Permissions
 SAFE_HTTP_METHODS = ("GET", "HEAD", "OPTIONS")

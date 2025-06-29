@@ -1,4 +1,5 @@
 """Serializers for Foodgram API."""
+
 from apps.recipes.models import (
     Favorite,
     Ingredient,
@@ -30,12 +31,27 @@ class IngredientInRecipeCreateSerializer(serializers.Serializer):
         },
     )
     amount = serializers.IntegerField(
-        min_value=1,
         error_messages={
-            "min_value": "Количество ингредиента должно быть больше 0.",
-            "invalid": "Количество ингредиента должно быть числом.",
+            "invalid": "Количество ингредиента должно быть целым числом.",
+            "required": "Укажите количество ингредиента.",
         },
     )
+
+    def validate_amount(self, value):
+        """Валидация количества ингредиента."""
+        if value is None:
+            raise serializers.ValidationError(
+                "Укажите количество ингредиента."
+            )
+        if value <= 0:
+            raise serializers.ValidationError(
+                "Количество ингредиента должно быть больше 0."
+            )
+        if value > 10000:
+            raise serializers.ValidationError(
+                "Количество ингредиента не может быть больше 10000."
+            )
+        return value
 
     def validate(self, data):
         """Дополнительная валидация данных ингредиента."""
@@ -222,9 +238,6 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         """Общая валидация данных рецепта."""
         # Проверяем обязательные поля
         required_fields = ["tags", "ingredients", "name", "text"]
-        # Добавляем image в обязательные поля только для создания рецепта
-        if not self.instance:  # Создание нового рецепта
-            required_fields.append("image")
 
         errors = {}
 
@@ -236,12 +249,14 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
                     errors[field] = [
                         "Необходимо добавить хотя бы один ингредиент."
                     ]
-                elif field == "image":
-                    errors[field] = ["Необходимо загрузить изображение."]
                 elif field == "name":
                     errors[field] = ["Название рецепта обязательно."]
                 elif field == "text":
                     errors[field] = ["Описание рецепта обязательно."]
+
+        # Проверяем изображение только при создании нового рецепта
+        if not self.instance and ("image" not in data or not data["image"]):
+            errors["image"] = ["Необходимо загрузить изображение."]
 
         if errors:
             raise serializers.ValidationError(errors)

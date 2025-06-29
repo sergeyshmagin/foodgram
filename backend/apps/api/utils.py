@@ -7,9 +7,9 @@ from django.db.models import Sum
 
 def generate_shopping_list(user):
     """Генерирует текст списка покупок для пользователя."""
-    # Получаем агрегированный список ингредиентов
+    # Получаем агрегированный список ингредиентов из корзины покупок
     ingredients = (
-        IngredientInRecipe.objects.filter(recipe__in_shopping_cart__user=user)
+        IngredientInRecipe.objects.filter(recipe__shoppingcart_set__user=user)
         .values("ingredient__name", "ingredient__measurement_unit")
         .annotate(total_amount=Sum("amount"))
         .order_by("ingredient__name")

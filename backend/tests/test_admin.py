@@ -6,6 +6,7 @@ from apps.users.admin import CustomUserAdmin
 from django.contrib import admin
 from django.contrib.admin.sites import AdminSite
 from django.contrib.auth import get_user_model
+from django.db.models import Count
 from django.test import RequestFactory
 
 User = get_user_model()
@@ -53,11 +54,8 @@ class TestRecipeAdmin:
         Favorite.objects.create(user=user, recipe=recipe)
 
         # Получаем рецепт с аннотацией как в админке
-        from apps.recipes.models import Recipe
-        from django.db.models import Count
-
         recipe_with_annotation = Recipe.objects.annotate(
-            favorites_count_annotated=Count("favorited_by")
+            favorites_count_annotated=Count("favorite_set")
         ).get(pk=recipe.pk)
 
         # Проверяем метод
