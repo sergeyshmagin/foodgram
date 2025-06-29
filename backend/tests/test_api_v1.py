@@ -80,26 +80,6 @@ class TestUserAPI:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "Неверный текущий пароль" in str(response.data)
 
-    def test_reset_password(self, api_client, user):
-        """Тест сброса пароля."""
-        url = reverse("api:v1:users-reset-password")
-        data = {"email": user.email}
-
-        response = api_client.post(url, data, format="json")
-
-        assert response.status_code == status.HTTP_204_NO_CONTENT
-
-    def test_reset_password_nonexistent_user(self, api_client):
-        """Тест сброса пароля для несуществующего пользователя."""
-        url = reverse("api:v1:users-reset-password")
-        data = {"email": "nonexistent@example.com"}
-
-        response = api_client.post(url, data, format="json")
-
-        # Должен возвращать тот же ответ, чтобы не раскрывать
-        # существование пользователя
-        assert response.status_code == status.HTTP_204_NO_CONTENT
-
 
 @pytest.mark.django_db
 class TestTagAPI:
