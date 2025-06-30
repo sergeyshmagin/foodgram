@@ -272,6 +272,12 @@ class RecipeUserActionModel(UserActionModel):
 
     class Meta(UserActionModel.Meta):
         abstract = True
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "recipe"],
+                name="unique_user_%(class)s_recipe",
+            )
+        ]
 
 
 class Favorite(RecipeUserActionModel):
@@ -282,11 +288,6 @@ class Favorite(RecipeUserActionModel):
 
         verbose_name = "Избранное"
         verbose_name_plural = "Избранные рецепты"
-        constraints = [
-            models.UniqueConstraint(
-                fields=["user", "recipe"], name="unique_user_favorite_recipe"
-            )
-        ]
 
     def __str__(self):
         """Строковое представление избранного рецепта."""
@@ -301,12 +302,6 @@ class ShoppingCart(RecipeUserActionModel):
 
         verbose_name = "Корзина"
         verbose_name_plural = "Корзины покупок"
-        constraints = [
-            models.UniqueConstraint(
-                fields=["user", "recipe"],
-                name="unique_user_shopping_cart_recipe",
-            )
-        ]
 
     def __str__(self):
         """Строковое представление корзины."""

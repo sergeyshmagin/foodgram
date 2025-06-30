@@ -1,5 +1,6 @@
 """URL configuration for Foodgram API with versioning."""
 from django.urls import include, path
+
 from drf_spectacular.views import SpectacularSwaggerView
 
 app_name = "api"

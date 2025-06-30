@@ -1,6 +1,7 @@
 """Custom permissions for Foodgram API."""
-from foodgram.constants import SAFE_HTTP_METHODS
 from rest_framework import permissions
+
+from foodgram.constants import SAFE_HTTP_METHODS
 
 
 class IsAuthorOrReadOnly(permissions.BasePermission):

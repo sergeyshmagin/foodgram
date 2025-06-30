@@ -1,5 +1,6 @@
 """URL configuration for Foodgram API v1."""
 from django.urls import include, path
+
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,

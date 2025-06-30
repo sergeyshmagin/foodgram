@@ -4,8 +4,10 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import Group
 from django.utils.safestring import mark_safe
-from foodgram.constants import ADMIN_LIST_PER_PAGE_LARGE, IMAGE_PREVIEW_SIZE
+
 from rest_framework.authtoken.models import TokenProxy
+
+from foodgram.constants import ADMIN_LIST_PER_PAGE_LARGE, IMAGE_PREVIEW_SIZE
 
 from .models import Subscription, User
 

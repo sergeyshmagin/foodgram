@@ -1,5 +1,12 @@
 """Serializers for Foodgram API."""
 
+from django.contrib.auth import get_user_model
+from django.db import transaction
+
+from djoser.serializers import UserCreateSerializer
+from djoser.serializers import UserSerializer as DjoserUserSerializer
+from rest_framework import serializers
+
 from apps.recipes.models import (
     Favorite,
     Ingredient,
@@ -9,12 +16,7 @@ from apps.recipes.models import (
     Tag,
 )
 from apps.users.models import Subscription
-from django.contrib.auth import get_user_model
-from django.db import transaction
-from djoser.serializers import UserCreateSerializer
-from djoser.serializers import UserSerializer as DjoserUserSerializer
 from foodgram.constants import MAX_COOKING_TIME, MIN_COOKING_TIME
-from rest_framework import serializers
 
 from .fields import Base64ImageField
 
@@ -52,10 +54,6 @@ class IngredientInRecipeCreateSerializer(serializers.Serializer):
                 "Количество ингредиента не может быть больше 10000."
             )
         return value
-
-    def validate(self, data):
-        """Дополнительная валидация данных ингредиента."""
-        return data
 
 
 class UserSerializer(DjoserUserSerializer):

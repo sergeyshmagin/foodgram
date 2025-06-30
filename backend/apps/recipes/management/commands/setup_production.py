@@ -1,7 +1,8 @@
 """Management команда для загрузки базовых данных в продакшн."""
-from apps.recipes.models import Tag
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
+
+from apps.recipes.models import Tag
 
 User = get_user_model()
 

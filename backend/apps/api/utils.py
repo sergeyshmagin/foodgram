@@ -1,8 +1,9 @@
 """Утилиты для API приложения."""
-from apps.recipes.models import IngredientInRecipe
 from django.conf import settings
 from django.core.mail import send_mail
 from django.db.models import Sum
+
+from apps.recipes.models import IngredientInRecipe
 
 
 def generate_shopping_list(user):

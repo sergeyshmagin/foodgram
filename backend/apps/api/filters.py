@@ -1,7 +1,9 @@
 """Filters for Foodgram API."""
-from apps.recipes.models import Ingredient, Recipe, Tag
 from django.contrib.auth import get_user_model
+
 from django_filters import rest_framework as filters
+
+from apps.recipes.models import Ingredient, Recipe, Tag
 
 User = get_user_model()
 
@@ -24,7 +26,6 @@ class RecipeFilter(filters.FilterSet):
         to_field_name="slug",
         queryset=Tag.objects.all(),
     )
-    author = filters.ModelChoiceFilter(queryset=User.objects.all())
     is_favorited = filters.BooleanFilter(method="filter_is_favorited")
     is_in_shopping_cart = filters.BooleanFilter(
         method="filter_is_in_shopping_cart"
